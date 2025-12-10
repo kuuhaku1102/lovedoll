@@ -56,6 +56,26 @@ def normalize_price(raw_text: str) -> Optional[int]:
         return None
 
 
+def _pick_image_src(image_tag) -> Optional[str]:
+    """Pick the best available image URL from lazy-loaded attributes."""
+
+    def from_srcset(value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        # srcset values are separated by commas and can include descriptors like "400w"
+        first_entry = value.split(",")[0].strip()
+        # Each entry can be "url 400w"; keep only the URL part
+        return first_entry.split()[0] if first_entry else None
+
+    return (
+        image_tag.get("src")
+        or image_tag.get("data-lazy-src")
+        or image_tag.get("data-src")
+        or from_srcset(image_tag.get("data-lazy-srcset"))
+        or from_srcset(image_tag.get("srcset"))
+    )
+
+
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     """Extract title, price, image URL, and product URL from a product block."""
     soup = BeautifulSoup(item_html, "lxml")
@@ -71,7 +91,7 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
 
     title = title_tag.get_text(strip=True)
     price = normalize_price(price_tag.get_text(" ", strip=True))
-    image_src = image_tag.get("src") or image_tag.get("data-lazy-src") or image_tag.get("data-src")
+    image_src = _pick_image_src(image_tag)
     product_href = product_link_tag.get("href")
 
     if price is None or not image_src or not product_href:
