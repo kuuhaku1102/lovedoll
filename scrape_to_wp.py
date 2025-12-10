@@ -153,6 +153,10 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
         logger.debug("Skipping item due to unparsable price or image")
         return None
 
+    if price >= 1_000_000:
+        logger.info("Skipping item priced at or above 1,000,000: %s (%s)", title, price)
+        return None
+
     image_url = urljoin(base_url, image_src)
     product_url = urljoin(base_url, product_href)
 
