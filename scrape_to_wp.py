@@ -7,6 +7,10 @@ Requirements installation:
 Usage:
     python scrape_to_wp.py --url "https://yourdoll.jp/product-category/all-sex-dolls/" --wp-base "https://freya-era.com"
 
+Defaults:
+    - Category URL: https://yourdoll.jp/product-category/all-sex-dolls/
+    - Pagination: up to 10 pages (override with --max-pages)
+
 WordPress REST endpoints are constructed from the base URL (default: https://freya-era.com):
     ADD:  <wp_base>/wp-json/lovedoll/v1/add-item
     LIST: <wp_base>/wp-json/lovedoll/v1/list
@@ -33,6 +37,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 WP_BASE_DEFAULT = "https://freya-era.com"
+DEFAULT_CATEGORY_URL = "https://yourdoll.jp/product-category/all-sex-dolls/"
+MAX_PAGES = 10
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; LovedollScraper/1.0; +https://freya-era.com)"
 }
@@ -51,41 +57,46 @@ def normalize_price(raw_text: str) -> Optional[int]:
 
 
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
-    """Extract title, price, and image URL from a single product block."""
+    """Extract title, price, image URL, and product URL from a product block."""
     soup = BeautifulSoup(item_html, "lxml")
 
     title_tag = soup.select_one("h3.wd-entities-title a")
     price_tag = soup.select_one("span.price") or soup.select_one("span.woocommerce-Price-amount")
     image_tag = soup.select_one(".product-image-link img")
+    product_link_tag = soup.select_one("a.product-image-link") or title_tag
 
-    if not title_tag or not price_tag or not image_tag:
+    if not title_tag or not price_tag or not image_tag or not product_link_tag:
         logger.debug("Skipping item due to missing data")
         return None
 
     title = title_tag.get_text(strip=True)
     price = normalize_price(price_tag.get_text(" ", strip=True))
     image_src = image_tag.get("src") or image_tag.get("data-lazy-src") or image_tag.get("data-src")
+    product_href = product_link_tag.get("href")
 
-    if price is None or not image_src:
+    if price is None or not image_src or not product_href:
         logger.debug("Skipping item due to unparsable price or image")
         return None
 
     image_url = urljoin(base_url, image_src)
+    product_url = urljoin(base_url, product_href)
 
     return {
         "title": title,
         "price": price,
         "image_url": image_url,
+        "product_url": product_url,
     }
 
 
-def scrape_items(url: str) -> List[Dict[str, object]]:
+def scrape_items(url: str, max_pages: int = MAX_PAGES) -> List[Dict[str, object]]:
     """Scrape a category page (following pagination) and return product dictionaries."""
     session = requests.Session()
     session.headers.update(HEADERS)
 
     items: List[Dict[str, object]] = []
     next_url: Optional[str] = url
+    page_count = 0
 
     while next_url:
         logger.info("Fetching page: %s", next_url)
@@ -104,6 +115,11 @@ def scrape_items(url: str) -> List[Dict[str, object]]:
             parsed = parse_item(str(node), base_url=next_url)
             if parsed:
                 items.append(parsed)
+
+        page_count += 1
+        if page_count >= max_pages:
+            logger.info("Reached max page limit (%d); stopping pagination", max_pages)
+            break
 
         # Find next page link
         next_link = soup.select_one("a.next.page-numbers, a[rel='next']")
@@ -155,7 +171,11 @@ def post_to_wp(data: Dict[str, object], wp_base: str, session: Optional[requests
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scrape products and post to WordPress API")
-    parser.add_argument("--url", required=True, help="Category URL to scrape")
+    parser.add_argument(
+        "--url",
+        default=DEFAULT_CATEGORY_URL,
+        help="Category URL to scrape (default: https://yourdoll.jp/product-category/all-sex-dolls/)",
+    )
     parser.add_argument(
         "--wp-base",
         default=WP_BASE_DEFAULT,
@@ -167,13 +187,19 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         default=None,
         help="Optional limit on number of products to post",
     )
+    parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=MAX_PAGES,
+        help="Maximum number of pages to paginate through (default: 10)",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
-    items = scrape_items(args.url)
+    items = scrape_items(args.url, max_pages=args.max_pages)
     if not items:
         logger.warning("No items scraped; exiting")
         return 1
