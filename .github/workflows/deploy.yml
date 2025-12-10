@@ -44,4 +44,4 @@ jobs:
 
           sftp_only: true
           delete_remote_files: false
-          rsyncArgs: "--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='.env' --exclude='.DS_Store'"
+          rsyncArgs: "--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='.env' --exclude='.DS_Store' --exclude='*.py'"
