@@ -7,8 +7,9 @@ on:
         description: "Scrape対象のカテゴリURL (例: https://yourdoll.jp/product-category/all-sex-dolls/)"
         required: true
       wp_base_url:
-        description: "WordPressサイトのベースURL (例: https://example.com)"
+        description: "WordPressサイトのベースURL (例: https://freya-era.com)"
         required: true
+        default: "https://freya-era.com"
       limit:
         description: "送信件数を制限したい場合に指定 (空なら全件)"
         required: false

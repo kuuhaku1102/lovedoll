@@ -5,9 +5,9 @@ Requirements installation:
     pip install requests beautifulsoup4 lxml
 
 Usage:
-    python scrape_to_wp.py --url "https://yourdoll.jp/product-category/all-sex-dolls/" --wp-base "https://example.com"
+    python scrape_to_wp.py --url "https://yourdoll.jp/product-category/all-sex-dolls/" --wp-base "https://freya-era.com"
 
-WordPress REST endpoints are constructed from the base URL:
+WordPress REST endpoints are constructed from the base URL (default: https://freya-era.com):
     ADD:  <wp_base>/wp-json/lovedoll/v1/add-item
     LIST: <wp_base>/wp-json/lovedoll/v1/list
 
@@ -32,8 +32,9 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+WP_BASE_DEFAULT = "https://freya-era.com"
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; LovedollScraper/1.0; +https://example.com)"
+    "User-Agent": "Mozilla/5.0 (compatible; LovedollScraper/1.0; +https://freya-era.com)"
 }
 REQUEST_TIMEOUT = 15
 
@@ -155,7 +156,11 @@ def post_to_wp(data: Dict[str, object], wp_base: str, session: Optional[requests
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scrape products and post to WordPress API")
     parser.add_argument("--url", required=True, help="Category URL to scrape")
-    parser.add_argument("--wp-base", required=True, help="WordPress base URL (e.g., https://example.com)")
+    parser.add_argument(
+        "--wp-base",
+        default=WP_BASE_DEFAULT,
+        help="WordPress base URL (default: https://freya-era.com)",
+    )
     parser.add_argument(
         "--limit",
         type=int,
