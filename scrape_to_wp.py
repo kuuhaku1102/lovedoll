@@ -5,10 +5,10 @@ Requirements installation:
     pip install requests beautifulsoup4 lxml
 
 Usage:
-    python scrape_to_wp.py --url "https://yourdoll.jp/product-category/all-sex-dolls/" --wp-base "https://freya-era.com"
+    python scrape_to_wp.py --url "https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date" --wp-base "https://freya-era.com"
 
 Defaults:
-    - Category URL: https://yourdoll.jp/product-category/all-sex-dolls/
+    - Category URL (latest first): https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date
     - Pagination: up to 10 pages (override with --max-pages)
 
 WordPress REST endpoints are constructed from the base URL (default: https://freya-era.com):
@@ -37,7 +37,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 WP_BASE_DEFAULT = "https://freya-era.com"
-DEFAULT_CATEGORY_URL = "https://yourdoll.jp/product-category/all-sex-dolls/"
+# 最新順（orderby=date）で取得するカテゴリ URL を既定にする
+DEFAULT_CATEGORY_URL = "https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date"
 MAX_PAGES = 10
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; LovedollScraper/1.0; +https://freya-era.com)"
@@ -57,24 +58,38 @@ def normalize_price(raw_text: str) -> Optional[int]:
 
 
 def _pick_image_src(image_tag) -> Optional[str]:
-    """Pick the best available image URL from lazy-loaded attributes."""
+    """Pick the best available (non data URI) image URL from lazy-loaded attributes."""
 
-    def from_srcset(value: Optional[str]) -> Optional[str]:
+    def srcset_candidates(value: Optional[str]) -> List[str]:
         if not value:
-            return None
-        # srcset values are separated by commas and can include descriptors like "400w"
-        first_entry = value.split(",")[0].strip()
-        # Each entry can be "url 400w"; keep only the URL part
-        return first_entry.split()[0] if first_entry else None
+            return []
+        urls = []
+        for entry in value.split(","):
+            url_part = entry.strip().split()[0] if entry.strip() else ""
+            if url_part:
+                urls.append(url_part)
+        # Prefer the last (often highest resolution) entry first
+        return list(reversed(urls))
 
-    return (
-        image_tag.get("src")
-        or image_tag.get("data-lazy-src")
-        or image_tag.get("data-src")
-        or from_srcset(image_tag.get("data-lazy-srcset"))
-        or from_srcset(image_tag.get("data-srcset"))
-        or from_srcset(image_tag.get("srcset"))
+    candidates: List[str] = []
+    candidates.extend(srcset_candidates(image_tag.get("data-lazy-srcset")))
+    candidates.extend(srcset_candidates(image_tag.get("data-srcset")))
+    candidates.extend(srcset_candidates(image_tag.get("srcset")))
+    candidates.extend(
+        [
+            image_tag.get("data-lazy-src"),
+            image_tag.get("data-src"),
+            image_tag.get("data-original"),
+            image_tag.get("data-ll-src"),
+            image_tag.get("data-cfsrc"),
+            image_tag.get("src"),
+        ]
     )
+
+    for candidate in candidates:
+        if candidate and not candidate.startswith("data:"):
+            return candidate
+    return None
 
 
 def _find_image_tag(root: BeautifulSoup) -> Optional[object]:
