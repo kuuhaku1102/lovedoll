@@ -29,8 +29,8 @@ python scrape_to_wp.py \
 
 ### スクリプトの主な処理
 - カテゴリページをスクレイピングし、ページネーションも自動で辿ります。
-- 商品タイトル・価格・画像 URL・商品ページ URL を抽出し、価格を整数に正規化します（lazyload の `srcset` や `data-lazy-src` も考慮）。
+- 商品タイトル・価格・画像 URL・商品ページ URL を抽出し、価格を整数に正規化します（lazyload の `srcset` / `data-lazy-src` / `data-srcset` や `<noscript>` 内の画像も考慮）。
 - 画像が取得できない商品はスキップします。
 - 相対 URL は絶対 URL へ変換します。
-- WordPress REST API へ POST し、正常時はレスポンスの ID をログ出力します。
+- WordPress REST API へ POST し、画像 URL と商品ページ URL（`product_url` / `product_link`）を併せて送信、正常時はレスポンスの ID をログ出力します。
 - HTTP エラーやタイムアウトをハンドリングします。
