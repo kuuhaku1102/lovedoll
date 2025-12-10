@@ -7,7 +7,6 @@ get_header();
 ?>
 
 <main id="primary" class="site-main">
-ｔｒうぇ
     <!-- Hero Section -->
     <section class="hero-section text-center cute-hero" style="background-image: url('<?php echo get_template_directory_uri(); ?>/images/hero-bg.png'); background-size: cover; background-position: center;">
         <div class="container hero-overlay" style="background: rgba(255,255,255,0.85); padding: 3rem; border-radius: 20px;">
@@ -255,4 +254,5 @@ get_header();
 
 <?php
 get_footer();
+
 
