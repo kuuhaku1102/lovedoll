@@ -108,6 +108,30 @@ def _find_image_tag(root: BeautifulSoup) -> Optional[object]:
     return None
 
 
+def _extract_product_href(soup: BeautifulSoup) -> Optional[str]:
+    """Extract the most likely product page link within a product block."""
+
+    selectors = [
+        "a.product-image-link",
+        "h3.wd-entities-title a",
+        "a.open-quick-view",
+        "a.quick-view-button",
+    ]
+
+    for selector in selectors:
+        tag = soup.select_one(selector)
+        if tag and tag.get("href") and "/product/" in tag["href"]:
+            return tag["href"]
+
+    # Fallback: any anchor that links to a product path
+    for tag in soup.find_all("a", href=True):
+        href = tag["href"]
+        if "/product/" in href:
+            return href
+
+    return None
+
+
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     """Extract title, price, image URL, and product URL from a product block."""
     soup = BeautifulSoup(item_html, "lxml")
@@ -115,16 +139,15 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     title_tag = soup.select_one("h3.wd-entities-title a")
     price_tag = soup.select_one("span.price") or soup.select_one("span.woocommerce-Price-amount")
     image_tag = _find_image_tag(soup)
-    product_link_tag = soup.select_one("a.product-image-link") or title_tag
+    product_href = _extract_product_href(soup)
 
-    if not title_tag or not price_tag or not image_tag or not product_link_tag:
+    if not title_tag or not price_tag or not image_tag or not product_href:
         logger.debug("Skipping item due to missing data")
         return None
 
     title = title_tag.get_text(strip=True)
     price = normalize_price(price_tag.get_text(" ", strip=True))
     image_src = _pick_image_src(image_tag)
-    product_href = product_link_tag.get("href")
 
     if price is None or not image_src or not product_href:
         logger.debug("Skipping item due to unparsable price or image")
