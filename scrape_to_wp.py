@@ -72,8 +72,25 @@ def _pick_image_src(image_tag) -> Optional[str]:
         or image_tag.get("data-lazy-src")
         or image_tag.get("data-src")
         or from_srcset(image_tag.get("data-lazy-srcset"))
+        or from_srcset(image_tag.get("data-srcset"))
         or from_srcset(image_tag.get("srcset"))
     )
+
+
+def _find_image_tag(root: BeautifulSoup) -> Optional[object]:
+    """Locate an <img> tag, including inside <noscript>, for a product block."""
+
+    tag = root.select_one(".product-image-link img")
+    if tag:
+        return tag
+
+    # Some themes wrap the real <img> inside a <noscript> block; parse its content.
+    noscript = root.select_one(".product-image-link noscript")
+    if noscript:
+        inner = BeautifulSoup(noscript.decode_contents(), "lxml")
+        return inner.find("img")
+
+    return None
 
 
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
@@ -82,7 +99,7 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
 
     title_tag = soup.select_one("h3.wd-entities-title a")
     price_tag = soup.select_one("span.price") or soup.select_one("span.woocommerce-Price-amount")
-    image_tag = soup.select_one(".product-image-link img")
+    image_tag = _find_image_tag(soup)
     product_link_tag = soup.select_one("a.product-image-link") or title_tag
 
     if not title_tag or not price_tag or not image_tag or not product_link_tag:
@@ -106,6 +123,7 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
         "price": price,
         "image_url": image_url,
         "product_url": product_url,
+        "product_link": product_url,
     }
 
 
