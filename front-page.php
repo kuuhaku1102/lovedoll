@@ -26,6 +26,15 @@ get_header();
         </div>
     </section>
 
+    <!-- Recommended Items Shortcode -->
+    <section id="recommended" class="section-padding container">
+        <div class="section-header text-center mb-5">
+            <span class="badge-cute">Recommended</span>
+            <h2 class="section-title">💖 おすすめ商品一覧</h2>
+            <p>厳選された最新のラブドールをご紹介</p>
+        </div>
+    <?php echo do_shortcode('[lovedoll_items]'); ?>
+
     <!-- Popular Ranking -->
     <section id="ranking" class="section-padding container">
         <div class="section-header text-center mb-5">
