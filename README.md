@@ -12,13 +12,15 @@ pip install requests beautifulsoup4 lxml
 ```bash
 python scrape_to_wp.py \
   --url "https://yourdoll.jp/product-category/all-sex-dolls/" \
-  --wp-base "https://example.com" \
+  --wp-base "https://freya-era.com" \
   --limit 20   # 送信数を制限したい場合に指定（省略可）
 ```
 
+`--wp-base` を省略した場合は `https://freya-era.com` を既定の送信先として利用します。
+
 ### GitHub Actions での実行（手動トリガー）
 `.github/workflows/scrape-and-post.yml` を手動実行（`workflow_dispatch`）すると、
-入力されたカテゴリ URL・WordPress ベース URL・任意の送信件数制限を使って
+入力されたカテゴリ URL・WordPress ベース URL（既定で `https://freya-era.com`）・任意の送信件数制限を使って
 同じ処理を GitHub Actions 上で動かせます。必要に応じて Actions 画面から
 パラメータを指定して実行してください。
 
