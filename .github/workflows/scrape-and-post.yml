@@ -1,0 +1,41 @@
+name: Scrape products and post to WordPress
+
+on:
+  workflow_dispatch:
+    inputs:
+      category_url:
+        description: "Scrape対象のカテゴリURL (例: https://yourdoll.jp/product-category/all-sex-dolls/)"
+        required: true
+      wp_base_url:
+        description: "WordPressサイトのベースURL (例: https://example.com)"
+        required: true
+      limit:
+        description: "送信件数を制限したい場合に指定 (空なら全件)"
+        required: false
+jobs:
+  scrape-and-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
+
+      - name: Run scraper and post to WordPress
+        env:
+          TARGET_URL: ${{ github.event.inputs.category_url }}
+          WP_BASE_URL: ${{ github.event.inputs.wp_base_url }}
+          LIMIT: ${{ github.event.inputs.limit }}
+        run: |
+          python scrape_to_wp.py \
+            --url "$TARGET_URL" \
+            --wp-base "$WP_BASE_URL" \
+            ${LIMIT:+--limit "$LIMIT"}
