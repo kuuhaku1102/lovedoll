@@ -4,6 +4,8 @@
 `python scrape_to_wp.py` を使って、任意のカテゴリページから商品情報を取得し、WordPress REST API（`/wp-json/lovedoll/v1/add-item`）へ送信できます。
 デフォルトの取得先は最新順の `https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date` で、ページネーションは最大 10 ページまで辿ります。
 
+`python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ）。
+
 ### 必要ライブラリのインストール
 ```bash
 pip install requests beautifulsoup4 lxml
@@ -21,11 +23,22 @@ python scrape_to_wp.py \
 `--wp-base` を省略した場合は `https://freya-era.com` を既定の送信先として利用します。
 `--url` を省略すると `https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date` を使用します。
 
+```bash
+# happiness-doll.com 向け（デフォルトURLは https://happiness-doll.com/products/list ）
+python scrape_happiness_to_wp.py \
+  --wp-base "https://freya-era.com" \
+  --limit 20 \
+  --max-pages 10
+```
+
 ### GitHub Actions での実行（手動トリガー）
 `.github/workflows/scrape-and-post.yml` を手動実行（`workflow_dispatch`）すると、
 入力されたカテゴリ URL・WordPress ベース URL（既定で `https://freya-era.com`）・任意の送信件数制限を使って
 同じ処理を GitHub Actions 上で動かせます。必要に応じて Actions 画面から
 パラメータを指定して実行してください。
+
+`.github/workflows/scrape-happiness.yml` を手動実行すると、`scrape_happiness_to_wp.py` を使って
+`https://happiness-doll.com/products/list`（入力で上書き可）をスクレイピングし、同様に WordPress へ登録できます。
 
 ### スクリプトの主な処理
 - カテゴリページをスクレイピングし、ページネーションも自動で辿ります。
