@@ -1,6 +1,6 @@
 """
 Scrape product data from https://happiness-doll.com/products/list (with pagination)
-and post it to a WordPress REST API.
+using the site's dedicated HTML structure and post it to a WordPress REST API.
 
 Requirements installation:
     pip install requests beautifulsoup4 lxml
@@ -19,6 +19,7 @@ Notes:
     * No authentication is assumed (permission_callback = __return_true).
     * Timeouts and HTTP error handling are included.
     * Relative URLs are resolved to absolute URLs.
+    * Selectors are dedicated to happiness-doll.com (no yourdoll.jp selectors are used).
 """
 from __future__ import annotations
 
@@ -27,7 +28,7 @@ import logging
 import re
 import sys
 import time
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -107,63 +108,6 @@ def _find_image_tag(root: BeautifulSoup) -> Optional[object]:
     return None
 
 
-def _extract_product_href(soup: BeautifulSoup) -> Optional[str]:
-    """Extract the most likely product page link within a product block."""
-
-    selectors = [
-        "a.product-img",
-        "a.product_image",
-        "a.item_thumb",
-        "h3 a",
-        "h2 a",
-        "p.name a",
-        "a.product-name",
-        "a.product_name",
-    ]
-
-    for selector in selectors:
-        tag = soup.select_one(selector)
-        if tag and tag.get("href"):
-            return tag["href"]
-
-    for tag in soup.find_all("a", href=True):
-        href = tag["href"]
-        if not href or href.startswith("#"):
-            continue
-        if "add-to-cart" in href:
-            continue
-        if any(keyword in href for keyword in ("/products/", "/product/", "product", "item")):
-            return href
-
-    return None
-
-
-def _product_candidates(soup: BeautifulSoup) -> Iterable[object]:
-    """Yield probable product nodes from the listing page."""
-
-    selectors = [
-        "div.item_list .item",
-        "ul.products li.product",
-        "div.products-list .product",
-        "div.product-list .product",
-        "article.product",
-        "li.product",
-    ]
-
-    for selector in selectors:
-        nodes = soup.select(selector)
-        if nodes:
-            return nodes
-
-    def looks_like_product(tag) -> bool:
-        if tag.name not in ("div", "li", "article"):
-            return False
-        classes = tag.get("class") or []
-        return any("product" in cls for cls in classes)
-
-    return soup.find_all(looks_like_product)
-
-
 def fetch_existing_product_urls(wp_base: str, session: Optional[requests.Session] = None) -> set:
     """Fetch existing product URLs from the WordPress list endpoint to avoid duplicates."""
 
@@ -212,79 +156,48 @@ def fetch_existing_product_urls(wp_base: str, session: Optional[requests.Session
 
 
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
-    """Extract title, price, image URL, and product URL from a product block."""
-    soup = BeautifulSoup(item_html, "lxml")
+    """Extract title, price, image URL, and product URL from a happiness-doll block."""
 
-    title_tag = None
-    for selector in ("h3 a", "h2 a", "p.name a", "a.product-name", "a.product_name", "a"):
-        tag = soup.select_one(selector)
-        if tag and tag.get("href"):
-            title_tag = tag
-            break
-    if title_tag is None:
-        for selector in ("h3", "h2", "p.name", "p.title", "div.title"):
-            tag = soup.select_one(selector)
-            if tag:
-                title_tag = tag
-                break
+    soup = BeautifulSoup(item_html, "lxml")
+    container = soup if soup.name == "li" else soup.find("li", class_="ec-shelfGrid__item") or soup
+
+    link_tag = container.find("a", href=True)
+    title_tag = container.select_one(".ec-shelfGrid__item-title")
+    image_tag = container.select_one(".ec-shelfGrid__item-image img")
 
     price_tag = None
-    price_selectors = (
-        "span.price",
-        "p.price",
-        "div.price",
-        "span.amount",
-        "span.woocommerce-Price-amount",
-    )
-    for selector in price_selectors:
-        tag = soup.select_one(selector)
+    for selector in (".discount-price", ".price-flash", ".price02", ".price"):
+        tag = container.select_one(selector)
         if tag:
             price_tag = tag
             break
-    if price_tag is None:
-        tag = soup.find(lambda t: t.name in {"span", "div", "p"} and t.get("class") and any("price" in c for c in t.get("class")))
-        price_tag = tag
 
-    image_tag = _find_image_tag(soup)
-    product_href = _extract_product_href(soup)
-
-    if title_tag is None or image_tag is None:
-        logger.debug("Skipping item due to missing title or image tag")
+    if not (link_tag and title_tag and image_tag and price_tag):
         return None
 
-    price_text = price_tag.get_text(" ", strip=True) if price_tag else soup.get_text(" ", strip=True)
-    price = normalize_price(price_text)
+    price = normalize_price(price_tag.get_text(" ", strip=True))
     image_src = _pick_image_src(image_tag)
-
-    if product_href is None:
-        for a in soup.find_all("a", href=True):
-            href = a.get("href")
-            if href and not href.startswith("#") and "add-to-cart" not in href:
-                product_href = href
-                break
-
-    if price is None or not image_src or not product_href:
-        logger.debug("Skipping item due to unparsable price/image/product link")
+    if price is None or not image_src:
         return None
 
     if price >= 1_000_000:
-        logger.info("Skipping item priced at or above 1,000,000: %s (%s)", title, price)
+        logger.info("Skipping item priced at or above 1,000,000: %s", price)
         return None
 
     image_url = urljoin(base_url, image_src)
-    product_url = urljoin(base_url, product_href)
+    product_url = urljoin(base_url, link_tag.get("href"))
 
     return {
-        "title": title,
+        "title": title_tag.get_text(strip=True),
         "price": price,
         "image_url": image_url,
         "product_url": product_url,
-        "product_link": product_url,
     }
 
 
 def scrape_items(url: str, max_pages: int = MAX_PAGES, delay: float = 1.5) -> List[Dict[str, object]]:
-    """Scrape a category page (following pagination) and return product dictionaries."""
+    """Scrape happiness-doll pages following pagination and return product dictionaries."""
+
     session = requests.Session()
     session.headers.update(HEADERS)
 
@@ -293,7 +206,7 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES, delay: float = 1.5) -> Li
     page_count = 0
     seen_product_urls: set[str] = set()
 
-    while next_url:
+    while next_url and page_count < max_pages:
         logger.info("Fetching page: %s", next_url)
         try:
             resp = session.get(next_url, timeout=REQUEST_TIMEOUT)
@@ -304,7 +217,7 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES, delay: float = 1.5) -> Li
 
         time.sleep(max(delay, 0))
         soup = BeautifulSoup(resp.text, "lxml")
-        product_nodes = list(_product_candidates(soup))
+        product_nodes = soup.select("li.ec-shelfGrid__item")
         logger.info("Found %d products on page", len(product_nodes))
 
         for node in product_nodes:
@@ -325,15 +238,15 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES, delay: float = 1.5) -> Li
             logger.info("Reached max page limit (%d); stopping pagination", max_pages)
             break
 
-        next_link = soup.select_one("a.next.page-numbers, a[rel='next'], li.next a, a.pagination-next")
+        next_link = soup.select_one("a[rel='next'], .ec-blockPagination__next a, li.ec-blockPagination__next a, a.ec-blockPagination__next")
         if next_link and next_link.get("href"):
             next_url = urljoin(next_url, next_link["href"])
         else:
             next_url = None
 
     logger.info("Total products scraped: %d", len(items))
+    session.close()
     return items
-
 
 def post_to_wp(data: Dict[str, object], wp_base: str, session: Optional[requests.Session] = None) -> Optional[int]:
     """Send a product dictionary to the WordPress REST endpoint.
