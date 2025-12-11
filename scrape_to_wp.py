@@ -132,6 +132,53 @@ def _extract_product_href(soup: BeautifulSoup) -> Optional[str]:
     return None
 
 
+def fetch_existing_product_urls(wp_base: str, session: Optional[requests.Session] = None) -> set:
+    """Fetch existing product URLs from the WordPress list endpoint to avoid duplicates."""
+
+    close_session = False
+    if session is None:
+        session = requests.Session()
+        close_session = True
+
+    endpoint = urljoin(wp_base.rstrip("/"), "/wp-json/lovedoll/v1/list")
+    urls: set[str] = set()
+
+    try:
+        resp = session.get(endpoint, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+        payload = resp.json()
+    except requests.RequestException as exc:
+        logger.warning("Could not fetch existing items; duplicate check may be incomplete: %s", exc)
+        payload = None
+    except ValueError:
+        logger.warning("Could not parse existing items (non-JSON response)")
+        payload = None
+
+    def collect(entry: dict) -> None:
+        for key in ("product_url", "product_link", "url"):
+            val = entry.get(key)
+            if isinstance(val, str):
+                urls.add(val)
+                return
+
+    if isinstance(payload, list):
+        for entry in payload:
+            if isinstance(entry, dict):
+                collect(entry)
+    elif isinstance(payload, dict):
+        items = payload.get("items")
+        if isinstance(items, list):
+            for entry in items:
+                if isinstance(entry, dict):
+                    collect(entry)
+
+    if urls:
+        logger.info("Loaded %d existing product URLs from WordPress", len(urls))
+    if close_session:
+        session.close()
+    return urls
+
+
 def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     """Extract title, price, image URL, and product URL from a product block."""
     soup = BeautifulSoup(item_html, "lxml")
@@ -177,6 +224,7 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES) -> List[Dict[str, object]
     items: List[Dict[str, object]] = []
     next_url: Optional[str] = url
     page_count = 0
+    seen_product_urls: set[str] = set()
 
     while next_url:
         logger.info("Fetching page: %s", next_url)
@@ -193,8 +241,16 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES) -> List[Dict[str, object]
 
         for node in product_nodes:
             parsed = parse_item(str(node), base_url=next_url)
-            if parsed:
-                items.append(parsed)
+            if not parsed:
+                continue
+
+            product_url = parsed.get("product_url")
+            if product_url in seen_product_urls:
+                logger.info("Skipping duplicate product URL already seen in this run: %s", product_url)
+                continue
+
+            seen_product_urls.add(product_url)  # type: ignore[arg-type]
+            items.append(parsed)
 
         page_count += 1
         if page_count >= max_pages:
@@ -279,20 +335,30 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
+    # Fetch existing items first to avoid duplicate posts
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    existing_urls = fetch_existing_product_urls(args.wp_base, session=session)
+
     items = scrape_items(args.url, max_pages=args.max_pages)
     if not items:
         logger.warning("No items scraped; exiting")
         return 1
 
-    session = requests.Session()
-    session.headers.update(HEADERS)
-
     posted = 0
     for item in items:
         if args.limit is not None and posted >= args.limit:
             break
+
+        product_url = item.get("product_url")
+        if product_url in existing_urls:
+            logger.info("Skipping duplicate product already existing on WordPress: %s", product_url)
+            continue
+
         if post_to_wp(item, wp_base=args.wp_base, session=session) is not None:
             posted += 1
+            if product_url:
+                existing_urls.add(product_url)  # Avoid re-posting in same run
 
     session.close()
 
