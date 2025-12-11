@@ -4,7 +4,7 @@
 `python scrape_to_wp.py` を使って、任意のカテゴリページから商品情報を取得し、WordPress REST API（`/wp-json/lovedoll/v1/add-item`）へ送信できます。
 デフォルトの取得先は最新順の `https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date` で、ページネーションは最大 10 ページまで辿ります。
 
-`python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。
+`python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。happiness-doll 専用の HTML 構造（`li.ec-shelfGrid__item` 内の `.ec-shelfGrid__item-title`／`.ec-shelfGrid__item-image img`／`.discount-price`→`.price-flash`→`.price02`→`.price` の優先順）にのみ依存し、yourdoll.jp のセレクタは使用しません。
 
 ### 必要ライブラリのインストール
 ```bash
