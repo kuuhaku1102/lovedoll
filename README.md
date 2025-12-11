@@ -32,5 +32,6 @@ python scrape_to_wp.py \
 - 商品タイトル・価格・画像 URL・商品ページ URL を抽出し、価格を整数に正規化します（lazyload の `srcset` / `data-lazy-src` / `data-srcset` / `data-original` などや `<noscript>` 内の画像も考慮し、data: URI は除外）。
 - 画像が取得できない商品や、価格が 100 万円以上の商品はスキップします。
 - 相対 URL は絶対 URL へ変換します。
+- すでに WordPress 側に存在する `product_url`（/wp-json/lovedoll/v1/list）や同一実行内で重複した商品 URL は POST をスキップします。
 - WordPress REST API へ POST し、画像 URL と商品ページ URL（`product_url` として送信）を併せて送信、正常時はレスポンスの ID をログ出力します。
 - HTTP エラーやタイムアウトをハンドリングします。
