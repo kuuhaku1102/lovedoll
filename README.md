@@ -4,7 +4,7 @@
 `python scrape_to_wp.py` を使って、任意のカテゴリページから商品情報を取得し、WordPress REST API（`/wp-json/lovedoll/v1/add-item`）へ送信できます。
 デフォルトの取得先は最新順の `https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date` で、ページネーションは最大 10 ページまで辿ります。
 
-`python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ）。
+`python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。
 
 ### 必要ライブラリのインストール
 ```bash
@@ -28,7 +28,8 @@ python scrape_to_wp.py \
 python scrape_happiness_to_wp.py \
   --wp-base "https://freya-era.com" \
   --limit 20 \
-  --max-pages 10
+  --max-pages 10 \
+  --delay 1.5   # ページ取得後に待機したい秒数（ロード画面対策に変更可）
 ```
 
 ### GitHub Actions での実行（手動トリガー）
@@ -41,7 +42,7 @@ python scrape_happiness_to_wp.py \
 `https://happiness-doll.com/products/list`（入力で上書き可）をスクレイピングし、同様に WordPress へ登録できます。
 
 ### スクリプトの主な処理
-- カテゴリページをスクレイピングし、ページネーションも自動で辿ります。
+- カテゴリページをスクレイピングし、ページネーションも自動で辿ります（1.5 秒の待機を標準で挟み、ロード画面を考慮）。
 - 商品タイトル・価格・画像 URL・商品ページ URL を抽出し、価格を整数に正規化します（lazyload の `srcset` / `data-lazy-src` / `data-srcset` / `data-original` などや `<noscript>` 内の画像も考慮し、data: URI は除外）。
 - 画像が取得できない商品や、価格が 100 万円以上の商品はスキップします。
 - 相対 URL は絶対 URL へ変換します。
