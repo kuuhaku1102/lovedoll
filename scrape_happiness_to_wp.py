@@ -26,6 +26,7 @@ import argparse
 import logging
 import re
 import sys
+import time
 from typing import Dict, Iterable, List, Optional
 from urllib.parse import urljoin
 
@@ -127,7 +128,11 @@ def _extract_product_href(soup: BeautifulSoup) -> Optional[str]:
 
     for tag in soup.find_all("a", href=True):
         href = tag["href"]
-        if "/products/" in href or "/product/" in href:
+        if not href or href.startswith("#"):
+            continue
+        if "add-to-cart" in href:
+            continue
+        if any(keyword in href for keyword in ("/products/", "/product/", "product", "item")):
             return href
 
     return None
@@ -216,6 +221,12 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
         if tag and tag.get("href"):
             title_tag = tag
             break
+    if title_tag is None:
+        for selector in ("h3", "h2", "p.name", "p.title", "div.title"):
+            tag = soup.select_one(selector)
+            if tag:
+                title_tag = tag
+                break
 
     price_tag = None
     price_selectors = (
@@ -237,16 +248,23 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     image_tag = _find_image_tag(soup)
     product_href = _extract_product_href(soup)
 
-    if not title_tag or not price_tag or not image_tag or not product_href:
-        logger.debug("Skipping item due to missing data")
+    if title_tag is None or image_tag is None:
+        logger.debug("Skipping item due to missing title or image tag")
         return None
 
-    title = title_tag.get_text(strip=True)
-    price = normalize_price(price_tag.get_text(" ", strip=True))
+    price_text = price_tag.get_text(" ", strip=True) if price_tag else soup.get_text(" ", strip=True)
+    price = normalize_price(price_text)
     image_src = _pick_image_src(image_tag)
 
+    if product_href is None:
+        for a in soup.find_all("a", href=True):
+            href = a.get("href")
+            if href and not href.startswith("#") and "add-to-cart" not in href:
+                product_href = href
+                break
+
     if price is None or not image_src or not product_href:
-        logger.debug("Skipping item due to unparsable price or image")
+        logger.debug("Skipping item due to unparsable price/image/product link")
         return None
 
     if price >= 1_000_000:
@@ -265,7 +283,7 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     }
 
 
-def scrape_items(url: str, max_pages: int = MAX_PAGES) -> List[Dict[str, object]]:
+def scrape_items(url: str, max_pages: int = MAX_PAGES, delay: float = 1.5) -> List[Dict[str, object]]:
     """Scrape a category page (following pagination) and return product dictionaries."""
     session = requests.Session()
     session.headers.update(HEADERS)
@@ -284,6 +302,7 @@ def scrape_items(url: str, max_pages: int = MAX_PAGES) -> List[Dict[str, object]
             logger.error("Failed to fetch %s: %s", next_url, exc)
             break
 
+        time.sleep(max(delay, 0))
         soup = BeautifulSoup(resp.text, "lxml")
         product_nodes = list(_product_candidates(soup))
         logger.info("Found %d products on page", len(product_nodes))
@@ -377,6 +396,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         default=MAX_PAGES,
         help="Maximum number of pages to paginate through (default: 10)",
     )
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=1.5,
+        help="Seconds to wait after each page fetch (to allow lazy content to load in HTML)",
+    )
     return parser.parse_args(argv)
 
 
@@ -387,7 +412,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     session.headers.update(HEADERS)
     existing_urls = fetch_existing_product_urls(args.wp_base, session=session)
 
-    items = scrape_items(args.url, max_pages=args.max_pages)
+    items = scrape_items(args.url, max_pages=args.max_pages, delay=args.delay)
     if not items:
         logger.warning("No items scraped; exiting")
         return 1
