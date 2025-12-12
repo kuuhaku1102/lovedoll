@@ -34,6 +34,17 @@ get_header();
             <p>厳選された最新のラブドールをご紹介</p>
         </div>
     <?php echo do_shortcode('[lovedoll_items]'); ?>
+    </section>
+
+    <!-- Website Ranking Section -->
+    <section id="website-ranking" class="section-padding container">
+        <div class="section-header text-center mb-5">
+            <span class="badge-cute">Top Websites</span>
+            <h2 class="section-title">🌐 おすすめウェブサイトランキング</h2>
+            <p>信頼できる優良サイトを厳選してご紹介</p>
+        </div>
+        <?php echo do_shortcode('[website_ranking limit="5"]'); ?>
+    </section>
 
     <!-- Popular Ranking -->
     <section id="ranking" class="section-padding container">
