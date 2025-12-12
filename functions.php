@@ -284,3 +284,8 @@ function lovedoll_website_ranking_shortcode( $atts ) {
     return ob_get_clean();
 }
 add_shortcode( 'website_ranking', 'lovedoll_website_ranking_shortcode' );
+
+/**
+ * Load SEO Blog API
+ */
+require_once get_template_directory() . '/includes/seo-blog-api.php';
