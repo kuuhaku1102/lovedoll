@@ -5,6 +5,7 @@
 デフォルトの取得先は最新順の `https://yourdoll.jp/product-category/all-sex-dolls/?orderby=date` で、ページネーションは最大 10 ページまで辿ります。
 
 `python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。happiness-doll 専用の HTML 構造（`li.ec-shelfGrid__item` 内の `.ec-shelfGrid__item-title`／`.ec-shelfGrid__item-image img`／`.discount-price`→`.price-flash`→`.price02`→`.price` の優先順）にのみ依存し、yourdoll.jp のセレクタは使用しません。
+`python scrape_sweet_to_wp.py` は `https://sweet-doll.com/product-category/sedoll/` をデフォルト取得元として、`.product-grid-item` / `.product-image-link img` / `.wd-entities-title a` / `.price .woocommerce-Price-amount` に完全準拠した sweet-doll 専用パーサで抽出し、同 REST API に送信します（最大 10 ページのページネーション対応、重複 URL スキップ付き）。
 
 ### 必要ライブラリのインストール
 ```bash
@@ -30,6 +31,12 @@ python scrape_happiness_to_wp.py \
   --limit 20 \
   --max-pages 10 \
   --delay 1.5   # ページ取得後に待機したい秒数（ロード画面対策に変更可）
+
+# sweet-doll.com 向け（デフォルトURLは https://sweet-doll.com/product-category/sedoll/ ）
+python scrape_sweet_to_wp.py \
+  --wp-base "https://freya-era.com" \
+  --limit 20 \
+  --max-pages 10
 ```
 
 ### GitHub Actions での実行（手動トリガー）
@@ -40,6 +47,8 @@ python scrape_happiness_to_wp.py \
 
 `.github/workflows/scrape-happiness.yml` を手動実行すると、`scrape_happiness_to_wp.py` を使って
 `https://happiness-doll.com/products/list`（入力で上書き可）をスクレイピングし、同様に WordPress へ登録できます。
+`.github/workflows/scrape-sweet.yml` を手動実行すると、`scrape_sweet_to_wp.py` を使って
+`https://sweet-doll.com/product-category/sedoll/`（入力で上書き可）をスクレイピングし、同様に WordPress へ登録できます。
 
 ### スクリプトの主な処理
 - カテゴリページをスクレイピングし、ページネーションも自動で辿ります（1.5 秒の待機を標準で挟み、ロード画面を考慮）。
