@@ -1,7 +1,7 @@
 <!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
-	<!-- Matomo -->
+		<!-- Matomo -->
 <script>
   var _paq = window._paq = window._paq || [];
   /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
@@ -16,7 +16,6 @@
   })();
 </script>
 <!-- End Matomo Code -->
-
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="profile" href="https://gmpg.org/xfn/11">
@@ -68,4 +67,3 @@
             </div>
 		</nav><!-- #site-navigation -->
 	</header><!-- #masthead -->
-
