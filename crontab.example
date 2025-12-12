@@ -1,0 +1,41 @@
+# Crontab Configuration for Daily Auto-posting
+# 
+# This file contains the cron job configuration for automatically posting
+# SEO blog articles every day at 10:00 AM (JST).
+#
+# Installation Instructions:
+# 1. Edit this file and replace placeholders with actual values
+# 2. Install the cron job: crontab -e
+# 3. Add the line below to your crontab
+#
+# Note: Make sure to set the AI_API environment variable in your crontab
+
+# Environment Variables (required)
+# Add these lines at the top of your crontab file:
+# AI_API=your-api-key-here
+# WP_BASE_URL=https://freya-era.com
+# POST_STATUS=publish
+# PATH=/usr/local/bin:/usr/bin:/bin
+
+# Daily Auto-posting at 10:00 AM JST
+# Format: minute hour day month weekday command
+# 0 10 * * * = Every day at 10:00 AM
+
+# Example 1: Post to production (publish immediately)
+# 0 10 * * * cd /path/to/lovedoll && /usr/bin/python3 auto_post_daily.py --status publish >> logs/cron.log 2>&1
+
+# Example 2: Post as draft (for review before publishing)
+# 0 10 * * * cd /path/to/lovedoll && /usr/bin/python3 auto_post_daily.py --status draft >> logs/cron.log 2>&1
+
+# Example 3: With explicit environment variables
+# 0 10 * * * AI_API="your-api-key" WP_BASE_URL="https://freya-era.com" cd /path/to/lovedoll && /usr/bin/python3 auto_post_daily.py --status publish >> logs/cron.log 2>&1
+
+# Recommended: Daily auto-posting at 10:00 AM JST with logging
+0 10 * * * cd /home/ubuntu/lovedoll && /usr/bin/python3 auto_post_daily.py --status publish >> logs/cron.log 2>&1
+
+# Optional: Weekly statistics report (every Monday at 9:00 AM)
+# 0 9 * * 1 cd /home/ubuntu/lovedoll && /usr/bin/python3 keyword_manager.py --stats >> logs/stats.log 2>&1
+
+# Optional: Monthly cycle reset (1st day of each month at 00:00)
+# This is usually not needed as the system auto-resets when all keywords are used
+# 0 0 1 * * cd /home/ubuntu/lovedoll && /usr/bin/python3 keyword_manager.py --reset >> logs/reset.log 2>&1
