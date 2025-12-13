@@ -1,0 +1,50 @@
+name: Scrape kuma-doll.com products and post to WordPress
+
+on:
+  workflow_dispatch:
+    inputs:
+      category_url:
+        description: "スクレイプ対象のカテゴリURL (例: https://www.kuma-doll.com/Products/list-r1.html)"
+        required: true
+        default: "https://www.kuma-doll.com/Products/list-r1.html"
+      wp_base_url:
+        description: "WordPressサイトのベースURL (例: https://freya-era.com)"
+        required: true
+        default: "https://freya-era.com"
+      limit:
+        description: "送信件数を制限したい場合に指定 (空なら全件)"
+        required: false
+      max_pages:
+        description: "ページネーションの上限 (例: 10)"
+        required: false
+        default: "10"
+
+jobs:
+  scrape-and-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
+
+      - name: Run kuma-doll scraper and post to WordPress
+        env:
+          TARGET_URL: ${{ github.event.inputs.category_url }}
+          WP_BASE_URL: ${{ github.event.inputs.wp_base_url }}
+          LIMIT: ${{ github.event.inputs.limit }}
+          MAX_PAGES: ${{ github.event.inputs.max_pages }}
+        run: |
+          python scrape_kuma_to_wp.py \
+            --url "$TARGET_URL" \
+            --wp-base "$WP_BASE_URL" \
+            ${LIMIT:+--limit "$LIMIT"} \
+            ${MAX_PAGES:+--max-pages "$MAX_PAGES"}
