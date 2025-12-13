@@ -3,7 +3,8 @@ Scrape product data from https://www.kuma-doll.com/Products/list-r1.html (with p
 and post it to a WordPress REST API.
 
 Installation:
-    pip install requests beautifulsoup4 lxml
+    pip install playwright requests beautifulsoup4 lxml
+    playwright install chromium
 
 Example usage:
     python scrape_kuma_to_wp.py \
@@ -28,10 +29,11 @@ import logging
 import os
 import re
 from typing import Dict, List, Optional, Set, Tuple
-from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit, parse_qs
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -43,6 +45,9 @@ REQUEST_TIMEOUT = 15
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; LovedollScraper/4.0; +https://freya-era.com)",
 }
+
+PLAYWRIGHT_WAIT_SELECTOR = "img[src*='image/cache'], img[src*='.webp'], img[src*='.jpg'], img[src*='.jpeg']"
+PLAYWRIGHT_WAIT_MS = 12000
 
 
 def normalize_price(raw_text: str) -> Optional[int]:
@@ -196,27 +201,26 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     }
 
 
-def fetch_detail_image(
-    session: requests.Session, product_url: str, base_url: str
-) -> Optional[Tuple[str, bytes, str]]:
-    """
-    Follow the required flow for kuma-doll: list -> product detail -> real image URL -> image bytes
-    using the same Session (cookies preserved).
+def fetch_detail_image_with_playwright(context, product_url: str, base_url: str) -> Optional[Tuple[str, bytes, str]]:
+    """Fetch detail page and real image using Playwright in the same session."""
 
-    Returns (resolved_image_url, content_bytes, filename) or None on failure.
-    """
-
+    page = context.new_page()
     try:
-        logger.info("Fetching detail page: %s", product_url)
-        detail_resp = session.get(product_url, timeout=REQUEST_TIMEOUT)
-        detail_resp.raise_for_status()
-    except requests.RequestException as exc:
-        logger.error("Failed to fetch detail page %s: %s", product_url, exc)
-        return None
+        logger.info("[Playwright] Opening detail page: %s", product_url)
+        page.goto(product_url, wait_until="networkidle", timeout=REQUEST_TIMEOUT * 1000)
+        try:
+            page.wait_for_selector(PLAYWRIGHT_WAIT_SELECTOR, timeout=PLAYWRIGHT_WAIT_MS)
+            page.wait_for_timeout(10000)
+        except PlaywrightTimeoutError:
+            logger.warning("Timeout waiting for images to load on %s", product_url)
 
-    soup = BeautifulSoup(detail_resp.content, "lxml")
+        html = page.content()
+    finally:
+        page.close()
 
+    soup = BeautifulSoup(html, "lxml")
     image_url: Optional[str] = None
+
     selectors = [
         "div.product img",
         "div#product img",
@@ -231,7 +235,7 @@ def fetch_detail_image(
             if not candidate:
                 continue
             resolved = urljoin(base_url, candidate)
-            if resolved:
+            if resolved and "logo" not in resolved:
                 image_url = resolved
                 break
         if image_url:
@@ -242,15 +246,16 @@ def fetch_detail_image(
         return None
 
     try:
-        logger.info("Fetching image (same session): %s", image_url)
-        img_resp = session.get(image_url, timeout=REQUEST_TIMEOUT)
+        logger.info("[Playwright] Downloading image with session: %s", image_url)
+        img_resp = context.request.get(image_url, timeout=REQUEST_TIMEOUT * 1000)
         img_resp.raise_for_status()
-    except requests.RequestException as exc:
+        content = img_resp.body()
+    except Exception as exc:  # noqa: BLE001
         logger.error("Failed to fetch image %s: %s", image_url, exc)
         return None
 
     filename = os.path.basename(urlsplit(image_url).path) or "kuma-image.webp"
-    return image_url, img_resp.content, filename
+    return image_url, content, filename
 
 
 def build_page_url(base_url: str, page: int) -> str:
@@ -267,65 +272,73 @@ def build_page_url(base_url: str, page: int) -> str:
 
 
 def scrape_items(category_url: str, max_pages: int = MAX_PAGES_DEFAULT, delay: float = 1.0) -> List[Dict[str, object]]:
-    """Scrape kuma-doll pages following pagination and return product dictionaries with fetched images."""
+    """Scrape kuma-doll with Playwright (list -> detail -> image) and return product dictionaries."""
 
-    session = requests.Session()
-    session.headers.update(HEADERS)
     collected: List[Dict[str, object]] = []
 
-    for page in range(1, max_pages + 1):
-        page_url = build_page_url(category_url, page)
-        try:
-            logger.info("Fetching page: %s", page_url)
-            resp = session.get(page_url, timeout=REQUEST_TIMEOUT)
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            logger.error("Failed to fetch %s: %s", page_url, exc)
-            break
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(user_agent=HEADERS["User-Agent"])
 
-        soup = BeautifulSoup(resp.content, "lxml")
-        items = soup.select(".product-item")
-        if not items:
-            logger.info("No products found on page %s; stopping.", page_url)
-            break
-
-        for item in items:
-            parsed = parse_item(str(item), category_url)
-            if not parsed:
-                continue
-
-            detail = fetch_detail_image(session, parsed["product_url"], category_url)
-            if not detail:
-                logger.info("Skipping item; could not fetch detail image: %s", parsed.get("title"))
-                continue
-
-            image_url, image_bytes, filename = detail
-            parsed["image_url"] = image_url
-            parsed["image_content"] = base64.b64encode(image_bytes).decode("ascii")
-            parsed["image_name"] = filename
-            collected.append(parsed)
-
-        logger.info("Collected %d items so far", len(collected))
-
-        # Attempt to detect explicit next page links; otherwise rely on page counter
-        next_link = soup.select_one("a.next, a.page-link[rel='next']")
-        if not next_link and page >= max_pages:
-            break
-        if next_link and next_link.get("href"):
-            candidate = urljoin(category_url, next_link.get("href"))
-            if candidate != page_url:
-                category_url = candidate
-                continue
-
-        if delay > 0 and page < max_pages:
+        for page_num in range(1, max_pages + 1):
+            page_url = build_page_url(category_url, page_num)
+            page = context.new_page()
             try:
-                import time
+                logger.info("[Playwright] Fetching page: %s", page_url)
+                page.goto(page_url, wait_until="networkidle", timeout=REQUEST_TIMEOUT * 1000)
+                try:
+                    page.wait_for_selector(".product-item", timeout=PLAYWRIGHT_WAIT_MS)
+                except PlaywrightTimeoutError:
+                    logger.warning("Timeout waiting for product items on %s", page_url)
+                page.wait_for_timeout(2000)
+                html = page.content()
+            finally:
+                page.close()
 
-                time.sleep(delay)
-            except Exception:
-                pass
+            soup = BeautifulSoup(html, "lxml")
+            items = soup.select(".product-item")
+            if not items:
+                logger.info("No products found on page %s; stopping.", page_url)
+                break
 
-    session.close()
+            for item in items:
+                parsed = parse_item(str(item), category_url)
+                if not parsed:
+                    continue
+
+                detail = fetch_detail_image_with_playwright(context, parsed["product_url"], category_url)
+                if not detail:
+                    logger.info("Skipping item; could not fetch detail image: %s", parsed.get("title"))
+                    continue
+
+                image_url, image_bytes, filename = detail
+                parsed["image_url"] = image_url
+                parsed["image_content"] = base64.b64encode(image_bytes).decode("ascii")
+                parsed["image_name"] = filename
+                collected.append(parsed)
+
+            logger.info("Collected %d items so far", len(collected))
+
+            next_link = soup.select_one("a.next, a.page-link[rel='next']")
+            if not next_link and page_num >= max_pages:
+                break
+            if next_link and next_link.get("href"):
+                candidate = urljoin(category_url, next_link.get("href"))
+                if candidate != page_url:
+                    category_url = candidate
+                    continue
+
+            if delay > 0 and page_num < max_pages:
+                try:
+                    import time
+
+                    time.sleep(delay)
+                except Exception:
+                    pass
+
+        context.close()
+        browser.close()
+
     return collected
 
 
