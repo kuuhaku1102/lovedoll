@@ -67,3 +67,9 @@ python scrape_kuma_to_wp.py \
 - すでに WordPress 側に存在する `product_url`（/wp-json/lovedoll/v1/list）や同一実行内で重複した商品 URL は POST をスキップします。
 - WordPress REST API へ POST し、画像 URL と商品ページ URL（`product_url` として送信）を併せて送信、正常時はレスポンスの ID をログ出力します。
 - HTTP エラーやタイムアウトをハンドリングします。
+
+### WordPress 側の REST API / 画像ホットリンク対策
+- `includes/lovedoll-products-api.php` で `/wp-json/lovedoll/v1/add-item` と `/wp-json/lovedoll/v1/list` を登録しています（`functions.php` 経由で読み込み）。
+- 送信 JSON は `{ "title": "...", "price": 123456, "image_url": "https://...", "product_url": "https://..." }` 形式で、すべてのフィールドが必須です。
+- `kuma-doll.com` ドメインの画像は WordPress サーバー側で `download_url()` → `media_handle_sideload()` でダウンロード・メディア登録し、取得したメディア URL を使ってホットリンク（ロゴ置換）を回避します。
+- それ以外のドメイン画像も `media_sideload_image()` でメディア化し、投稿のアイキャッチに設定します。投稿には `product_url`・元画像 URL・最終的なメディア URL（`_final_image_url`）と価格がメタ保存されます。
