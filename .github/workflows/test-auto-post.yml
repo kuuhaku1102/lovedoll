@@ -1,0 +1,85 @@
+name: Test Auto Post
+
+on:
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: 'Keyword to test (optional, leave empty for auto-select)'
+        required: false
+        type: string
+      status:
+        description: 'Post status'
+        required: true
+        type: choice
+        options:
+          - draft
+          - publish
+        default: draft
+      dry_run:
+        description: 'Dry run (do not actually post)'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  test-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests openai
+      
+      - name: Create logs directory
+        run: mkdir -p logs
+      
+      - name: Show keyword statistics
+        run: |
+          python keyword_manager.py --stats
+      
+      - name: Run test (with keyword)
+        if: ${{ inputs.keyword != '' }}
+        env:
+          AI_API: ${{ secrets.AI_API }}
+          WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
+          POST_STATUS: ${{ inputs.status }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python auto_post_daily.py --force-keyword "${{ inputs.keyword }}" --status ${{ inputs.status }} --dry-run
+          else
+            python auto_post_daily.py --force-keyword "${{ inputs.keyword }}" --status ${{ inputs.status }}
+          fi
+      
+      - name: Run test (auto-select keyword)
+        if: ${{ inputs.keyword == '' }}
+        env:
+          AI_API: ${{ secrets.AI_API }}
+          WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
+          POST_STATUS: ${{ inputs.status }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python auto_post_daily.py --status ${{ inputs.status }} --dry-run
+          else
+            python auto_post_daily.py --status ${{ inputs.status }}
+          fi
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
+      
+      - name: Show keyword statistics (after)
+        if: always()
+        run: |
+          python keyword_manager.py --stats
