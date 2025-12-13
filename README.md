@@ -6,7 +6,7 @@
 
 `python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。happiness-doll 専用の HTML 構造（`li.ec-shelfGrid__item` 内の `.ec-shelfGrid__item-title`／`.ec-shelfGrid__item-image img`／`.discount-price`→`.price-flash`→`.price02`→`.price` の優先順）にのみ依存し、yourdoll.jp のセレクタは使用しません。
 `python scrape_sweet_to_wp.py` は `https://sweet-doll.com/product-category/sedoll/` をデフォルト取得元として、`.product-grid-item` / `.product-image-link img` / `.wd-entities-title a` / `.price .woocommerce-Price-amount` に完全準拠した sweet-doll 専用パーサで抽出し、同 REST API に送信します（最大 10 ページのページネーション対応、重複 URL スキップ付き）。
-`python scrape_kuma_to_wp.py` は `https://www.kuma-doll.com/Products/list-r1.html` をデフォルト取得元として、`.product-item` / `.image img` / `.title` / `.price span` に完全準拠した kuma-doll 専用パーサで抽出し、同 REST API に送信します（最大 10 ページ、重複 URL スキップ・100 万円以上スキップ付き）。
+`python scrape_kuma_to_wp.py` は `https://www.kuma-doll.com/Products/list-r1.html` をデフォルト取得元として、`.product-item` / `.image img` / `.title` / `.price span` に完全準拠した kuma-doll 専用パーサで抽出し、lazyload や `<noscript>` 内の画像・他の `<img>` もフォールバックで拾って同 REST API に送信します（最大 10 ページ、重複 URL スキップ・100 万円以上スキップ付き）。
 
 ### 必要ライブラリのインストール
 ```bash

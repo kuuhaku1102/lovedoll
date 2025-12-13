@@ -55,8 +55,8 @@ def normalize_price(raw_text: str) -> Optional[int]:
         return None
 
 
-def _pick_image_src(image_tag) -> Optional[str]:
-    """Pick the best available (non data URI) image URL from lazy-loaded attributes."""
+def _pick_image_src(image_tag, container=None) -> Optional[str]:
+    """Pick the best available (non data URI) image URL from lazy-loaded attributes or fallbacks."""
 
     def srcset_candidates(value: Optional[str]) -> List[str]:
         if not value:
@@ -66,6 +66,7 @@ def _pick_image_src(image_tag) -> Optional[str]:
             url_part = entry.strip().split()[0] if entry.strip() else ""
             if url_part:
                 urls.append(url_part)
+        # prefer larger (last) candidates first
         return list(reversed(urls))
 
     candidates: List[str] = []
@@ -79,9 +80,31 @@ def _pick_image_src(image_tag) -> Optional[str]:
             image_tag.get("data-original"),
             image_tag.get("data-ll-src"),
             image_tag.get("data-cfsrc"),
+            image_tag.get("data-echo"),
+            image_tag.get("data-hires"),
+            image_tag.get("data-image"),
             image_tag.get("src"),
         ]
     )
+
+    # Fallback: check for <noscript> image HTML nested near the tag
+    if container is not None:
+        noscript = image_tag.find_next("noscript")
+        if noscript and noscript.string:
+            try:
+                ns_soup = BeautifulSoup(noscript.string, "lxml")
+                ns_img = ns_soup.find("img")
+                if ns_img:
+                    candidates.extend(srcset_candidates(ns_img.get("srcset")))
+                    candidates.append(ns_img.get("src"))
+            except Exception:
+                pass
+
+        # Absolute fallback: any other <img> inside the same product container
+        for extra_img in container.find_all("img"):
+            candidates.extend(srcset_candidates(extra_img.get("srcset")))
+            candidates.append(extra_img.get("src"))
+            candidates.append(extra_img.get("data-src"))
 
     for candidate in candidates:
         if candidate and not candidate.startswith("data:"):
@@ -159,7 +182,7 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
         logger.info("Skipping item priced at or above 1,000,000: %s", price)
         return None
 
-    image_src = _pick_image_src(image_tag)
+    image_src = _pick_image_src(image_tag, container)
     if not image_src:
         return None
 
