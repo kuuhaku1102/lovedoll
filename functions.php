@@ -566,3 +566,50 @@ function lovedoll_breadcrumb() {
     echo '</ol>';
     echo '</nav>';
 }
+
+/**
+ * ========================================
+ * アフィリエイトリンク自動変換機能
+ * ========================================
+ */
+
+// 管理画面を読み込み
+require_once get_template_directory() . '/admin-affiliate-links.php';
+
+/**
+ * フロントエンドに JavaScript を読み込み
+ */
+function lovedoll_enqueue_affiliate_converter() {
+    // 管理画面では読み込まない
+    if (is_admin()) {
+        return;
+    }
+
+    // JavaScript ファイルを読み込み
+    wp_enqueue_script(
+        'lovedoll-affiliate-converter',
+        get_template_directory_uri() . '/js/affiliate-link-converter.js',
+        array(),
+        '1.0.0',
+        true
+    );
+
+    // 設定を JavaScript に渡す
+    $affiliate_links = get_option('lovedoll_affiliate_links', array());
+    
+    wp_localize_script(
+        'lovedoll-affiliate-converter',
+        'lovedollAffiliateSettings',
+        array(
+            'links' => $affiliate_links
+        )
+    );
+}
+add_action('wp_enqueue_scripts', 'lovedoll_enqueue_affiliate_converter');
+
+/**
+ * デバッグ用：設定を確認する関数
+ */
+function lovedoll_get_affiliate_settings() {
+    return get_option('lovedoll_affiliate_links', array());
+}
