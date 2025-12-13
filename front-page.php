@@ -103,9 +103,6 @@ get_header();
             endif;
             ?>
         </div>
-        <div class="text-center mt-4">
-            <a href="/ranking" class="btn btn-outline-pink rounded-pill">→ ［もっと見る］（ランキングページへ）</a>
-        </div>
     </section>
 
     <!-- How to Choose -->
@@ -249,9 +246,6 @@ get_header();
                     </tr>
                 </tbody>
             </table>
-        </div>
-        <div class="text-center mt-3">
-            <a href="#" class="btn btn-outline-pink">→ ［詳しい比較を見る］</a>
         </div>
     </section>
 
