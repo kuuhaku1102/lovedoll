@@ -6,6 +6,9 @@ on:
     - cron: '0 1 * * *'
   workflow_dispatch:  # 手動実行も可能
 
+permissions:
+  contents: write  # keyword_state.json をコミット・プッシュするために必要
+
 jobs:
   auto-post:
     runs-on: ubuntu-latest
@@ -13,6 +16,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,6 +32,10 @@ jobs:
       - name: Create logs directory
         run: mkdir -p logs
       
+      - name: Pull latest changes
+        run: |
+          git pull origin main || true
+      
       - name: Run auto post script
         env:
           AI_API: ${{ secrets.AI_API }}
@@ -38,15 +48,34 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: auto-post-logs
+          name: auto-post-logs-${{ github.run_number }}
           path: logs/
           retention-days: 30
       
-      - name: Commit keyword state
+      - name: Commit and push keyword state
         if: success()
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          
+          # Add keyword state file
           git add keyword_state.json || true
-          git diff --staged --quiet || git commit -m "Update keyword state [skip ci]"
-          git push || true
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update keyword state after auto-posting [skip ci]"
+            
+            # Push with retry logic
+            for i in {1..3}; do
+              if git push origin main; then
+                echo "Successfully pushed changes"
+                break
+              else
+                echo "Push failed, retrying in 5 seconds..."
+                sleep 5
+                git pull --rebase origin main || true
+              fi
+            done
+          fi
