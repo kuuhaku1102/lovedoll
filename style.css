@@ -835,3 +835,138 @@ h6 {
         height: 120px;
     }
 }
+
+/* ============================================
+   Blog Section Styles
+   ============================================ */
+
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.blog-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.blog-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+}
+
+.blog-thumbnail {
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: var(--color-light-gray);
+}
+
+.blog-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.blog-card:hover .blog-thumbnail img {
+    transform: scale(1.05);
+}
+
+.blog-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-grow: 1;
+}
+
+.blog-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-charcoal);
+}
+
+.blog-date {
+    color: #666;
+}
+
+.blog-category {
+    background: linear-gradient(135deg, var(--color-pink), var(--color-deep-pink));
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.blog-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.blog-title a {
+    color: var(--color-charcoal);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.blog-title a:hover {
+    color: var(--color-pink);
+}
+
+.blog-excerpt {
+    color: #666;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+.blog-read-more {
+    color: var(--color-pink);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: gap 0.3s ease;
+}
+
+.blog-read-more:hover {
+    gap: 0.5rem;
+    color: var(--color-deep-pink);
+}
+
+/* Blog Archive Page */
+.archive .blog-grid,
+.blog .blog-grid,
+.home .blog-grid {
+    margin-top: 2rem;
+}
+
+/* Responsive Design for Blog */
+@media (max-width: 768px) {
+    .blog-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .blog-title {
+        font-size: 1.125rem;
+    }
+    
+    .blog-content {
+        padding: 1.25rem;
+    }
+}

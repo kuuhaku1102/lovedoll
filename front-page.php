@@ -241,6 +241,68 @@ get_header();
         </div>
     </section>
 
+    <!-- Blog Articles Section -->
+    <section id="blog" class="section-padding container">
+        <div class="section-header text-center mb-5">
+            <span class="badge-cute">Column</span>
+            <h2 class="section-title">📝 コラム記事</h2>
+            <p>ラブドールに関する役立つ情報をお届けします</p>
+        </div>
+        
+        <div class="blog-grid">
+            <?php
+            $blog_args = array(
+                'post_type' => 'post',
+                'posts_per_page' => 6,
+                'orderby' => 'date',
+                'order' => 'DESC'
+            );
+            $blog_query = new WP_Query($blog_args);
+            
+            if ($blog_query->have_posts()) :
+                while ($blog_query->have_posts()) : $blog_query->the_post();
+                ?>
+                <article class="blog-card">
+                    <?php if (has_post_thumbnail()) : ?>
+                        <a href="<?php the_permalink(); ?>" class="blog-thumbnail">
+                            <?php the_post_thumbnail('medium'); ?>
+                        </a>
+                    <?php endif; ?>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span class="blog-date"><?php echo get_the_date('Y.m.d'); ?></span>
+                            <?php
+                            $categories = get_the_category();
+                            if (!empty($categories)) {
+                                echo '<span class="blog-category">' . esc_html($categories[0]->name) . '</span>';
+                            }
+                            ?>
+                        </div>
+                        <h3 class="blog-title">
+                            <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                        </h3>
+                        <div class="blog-excerpt">
+                            <?php echo wp_trim_words(get_the_excerpt(), 30, '...'); ?>
+                        </div>
+                        <a href="<?php the_permalink(); ?>" class="blog-read-more">続きを読む →</a>
+                    </div>
+                </article>
+                <?php
+                endwhile;
+                wp_reset_postdata();
+            else :
+                ?>
+                <p class="text-center">まだ記事がありません。</p>
+                <?php
+            endif;
+            ?>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="btn btn-outline-pink btn-lg">すべての記事を見る →</a>
+        </div>
+    </section>
+
     <!-- FAQ -->
     <section class="section-padding bg-cute-pattern">
         <div class="container">

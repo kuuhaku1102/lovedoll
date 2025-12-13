@@ -289,3 +289,48 @@ add_shortcode( 'website_ranking', 'lovedoll_website_ranking_shortcode' );
  * Load SEO Blog API
  */
 require_once get_template_directory() . '/includes/seo-blog-api.php';
+
+/**
+ * Add Column Menu Item to Primary Menu
+ */
+function lovedoll_add_column_menu_item($items, $args) {
+    if ($args->theme_location == 'primary') {
+        // Get blog page URL
+        $blog_url = get_permalink(get_option('page_for_posts'));
+        if (!$blog_url) {
+            $blog_url = home_url('/blog/');
+        }
+        
+        // Add Column menu item
+        $column_item = '<li class="menu-item menu-item-column"><a href="' . esc_url($blog_url) . '">📝 コラム</a></li>';
+        $items .= $column_item;
+    }
+    return $items;
+}
+add_filter('wp_nav_menu_items', 'lovedoll_add_column_menu_item', 10, 2);
+
+/**
+ * Create Blog Archive Page on Theme Activation
+ */
+function lovedoll_create_blog_page() {
+    // Check if blog page already exists
+    $blog_page = get_page_by_path('blog');
+    
+    if (!$blog_page) {
+        // Create blog page
+        $blog_page_id = wp_insert_post(array(
+            'post_title'    => 'コラム',
+            'post_name'     => 'blog',
+            'post_content'  => '',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_author'   => 1,
+        ));
+        
+        // Set as posts page
+        if ($blog_page_id && !is_wp_error($blog_page_id)) {
+            update_option('page_for_posts', $blog_page_id);
+        }
+    }
+}
+add_action('after_switch_theme', 'lovedoll_create_blog_page');
