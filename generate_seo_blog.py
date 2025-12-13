@@ -30,8 +30,14 @@ import os
 import sys
 from typing import Dict, List, Optional
 from datetime import datetime
+from pathlib import Path
+import sys
+
+# Add the current directory to the path
+sys.path.insert(0, str(Path(__file__).parent))
 
 import requests
+from ranking_data_manager import RankingDataManager
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -78,19 +84,41 @@ class SEOBlogGenerator:
         """
         logger.info(f"Generating blog post for keyword: {keyword}")
         
-        prompt = self._create_seo_prompt(keyword)
+        # Get affiliate link information if keyword is ranking-related
+        ranking_manager = RankingDataManager()
+        affiliate_info = ranking_manager.get_affiliate_link_for_keyword(keyword)
+        
+        prompt = self._create_seo_prompt(keyword, affiliate_info)
         
         try:
             response = self._call_ai_api(prompt)
             result = self._parse_response(response, keyword)
             result["keyword"] = keyword  # Add keyword to result
+            
+            # Add affiliate info to result
+            if affiliate_info:
+                result["affiliate_info"] = affiliate_info
+                logger.info(f"Affiliate link added: {affiliate_info['affiliate_link']}")
+            
             return result
         except Exception as e:
             logger.error(f"Failed to generate blog post: {e}")
             raise
     
-    def _create_seo_prompt(self, keyword: str) -> str:
+    def _create_seo_prompt(self, keyword: str, affiliate_info: dict = None) -> str:
         """Create an SEO-optimized prompt for the AI."""
+        
+        # Add affiliate link instruction if available
+        affiliate_instruction = ""
+        if affiliate_info and affiliate_info.get("affiliate_link"):
+            affiliate_instruction = f"""
+
+重要: 記事内の適切な箇所（特に「おすすめ」「購入」「公式サイト」などの文脈）に、以下のリンクを自然に挿入してください：
+- リンク先: {affiliate_info['affiliate_link']}
+- リンクテキスト例: 「{affiliate_info['title']}の公式サイトはこちら」「{affiliate_info['title']}で購入する」など
+- 記事内に2-3箇所、自然な形でリンクを配置してください
+"""
+        
         return f"""あなたはSEOに精通したプロのコンテンツライターです。以下のキーワードについて、検索エンジンで上位表示されるような高品質なブログ記事を作成してください。
 
 ターゲットキーワード: {keyword}
@@ -108,7 +136,7 @@ class SEOBlogGenerator:
 記事構成:
 - 導入（問題提起・共感）
 - 本論（具体的な解決策・ノウハウ）
-- まとめ（行動喚起）
+- まとめ（行動喚起）{affiliate_instruction}
 
 出力形式（JSON）:
 {{

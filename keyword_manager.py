@@ -23,6 +23,18 @@ logger = logging.getLogger(__name__)
 
 # Comprehensive keyword database for lovedoll topics
 KEYWORD_DATABASE = [
+    # ランキングページ関連（優先度高）
+    "Sweet Doll おすすめ",
+    "Sweet Doll レビュー",
+    "Sweet Doll 評判",
+    "Sweet Doll 購入ガイド",
+    "Happiness Doll おすすめ",
+    "Happiness Doll レビュー",
+    "Happiness Doll 評判",
+    "YourDoll おすすめ",
+    "YourDoll レビュー",
+    "YourDoll 評判",
+    
     # 基本・選び方
     "ラブドール 選び方",
     "ラブドール おすすめ",
