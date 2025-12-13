@@ -23,9 +23,11 @@ Notes:
 from __future__ import annotations
 
 import argparse
+import base64
 import logging
+import os
 import re
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit, parse_qs
 
 import requests
@@ -194,6 +196,63 @@ def parse_item(item_html: str, base_url: str) -> Optional[Dict[str, object]]:
     }
 
 
+def fetch_detail_image(
+    session: requests.Session, product_url: str, base_url: str
+) -> Optional[Tuple[str, bytes, str]]:
+    """
+    Follow the required flow for kuma-doll: list -> product detail -> real image URL -> image bytes
+    using the same Session (cookies preserved).
+
+    Returns (resolved_image_url, content_bytes, filename) or None on failure.
+    """
+
+    try:
+        logger.info("Fetching detail page: %s", product_url)
+        detail_resp = session.get(product_url, timeout=REQUEST_TIMEOUT)
+        detail_resp.raise_for_status()
+    except requests.RequestException as exc:
+        logger.error("Failed to fetch detail page %s: %s", product_url, exc)
+        return None
+
+    soup = BeautifulSoup(detail_resp.content, "lxml")
+
+    image_url: Optional[str] = None
+    selectors = [
+        "div.product img",
+        "div#product img",
+        "div.product-gallery img",
+        "div.product-images img",
+        "img",
+    ]
+
+    for selector in selectors:
+        for img in soup.select(selector):
+            candidate = _pick_image_src(img, soup)
+            if not candidate:
+                continue
+            resolved = urljoin(base_url, candidate)
+            if resolved:
+                image_url = resolved
+                break
+        if image_url:
+            break
+
+    if not image_url:
+        logger.error("Could not locate image on detail page: %s", product_url)
+        return None
+
+    try:
+        logger.info("Fetching image (same session): %s", image_url)
+        img_resp = session.get(image_url, timeout=REQUEST_TIMEOUT)
+        img_resp.raise_for_status()
+    except requests.RequestException as exc:
+        logger.error("Failed to fetch image %s: %s", image_url, exc)
+        return None
+
+    filename = os.path.basename(urlsplit(image_url).path) or "kuma-image.webp"
+    return image_url, img_resp.content, filename
+
+
 def build_page_url(base_url: str, page: int) -> str:
     """Append or replace page query parameter for pagination."""
 
@@ -208,7 +267,7 @@ def build_page_url(base_url: str, page: int) -> str:
 
 
 def scrape_items(category_url: str, max_pages: int = MAX_PAGES_DEFAULT, delay: float = 1.0) -> List[Dict[str, object]]:
-    """Scrape kuma-doll pages following pagination and return product dictionaries."""
+    """Scrape kuma-doll pages following pagination and return product dictionaries with fetched images."""
 
     session = requests.Session()
     session.headers.update(HEADERS)
@@ -232,8 +291,19 @@ def scrape_items(category_url: str, max_pages: int = MAX_PAGES_DEFAULT, delay: f
 
         for item in items:
             parsed = parse_item(str(item), category_url)
-            if parsed:
-                collected.append(parsed)
+            if not parsed:
+                continue
+
+            detail = fetch_detail_image(session, parsed["product_url"], category_url)
+            if not detail:
+                logger.info("Skipping item; could not fetch detail image: %s", parsed.get("title"))
+                continue
+
+            image_url, image_bytes, filename = detail
+            parsed["image_url"] = image_url
+            parsed["image_content"] = base64.b64encode(image_bytes).decode("ascii")
+            parsed["image_name"] = filename
+            collected.append(parsed)
 
         logger.info("Collected %d items so far", len(collected))
 
