@@ -48,17 +48,25 @@ get_header();
 
     <!-- Popular Ranking -->
     <section id="ranking" class="section-padding container">
-        <div class="section-header text-center mb-5">
-            <span class="badge-cute">Best Choice</span>
-            <h2 class="section-title">🔥 今売れているラブドール TOP10</h2>
-            <p>迷ったら、まずはここから。<br>口コミ評価・購入レビュー・満足度を総合してランキング形式で紹介。</p>
-            <h3>SweetDoll</h3>
-             <?php echo do_shortcode('[lovedoll_items domain="sweet-doll.com"]'); ?>
-            <h3>HappinessDoll</h3>
-           <?php echo do_shortcode('[lovedoll_items domain="happiness-doll.com"]'); ?>
-            <h3>YourDoll</h3>
-          <?php echo do_shortcode('[lovedoll_items domain="yourdoll.jp"]'); ?>
-        </div>
+  <!-- 見出しだけ -->
+    <div class="section-header text-center mb-5">
+        <span class="badge-cute">Best Choice</span>
+        <h2 class="section-title">🔥 今売れているラブドール TOP10</h2>
+        <p>迷ったら、まずはここから。<br>
+           口コミ評価・購入レビュー・満足度を総合してランキング形式で紹介。</p>
+    </div>
+
+    <!-- SweetDoll -->
+    <h3 class="text-center mb-4">SweetDoll</h3>
+    <?php echo do_shortcode('[lovedoll_items domain="sweet-doll.com"]'); ?>
+
+    <!-- HappinessDoll -->
+    <h3 class="text-center mt-5 mb-4">HappinessDoll</h3>
+    <?php echo do_shortcode('[lovedoll_items domain="happiness-doll.com"]'); ?>
+
+    <!-- YourDoll -->
+    <h3 class="text-center mt-5 mb-4">YourDoll</h3>
+    <?php echo do_shortcode('[lovedoll_items domain="yourdoll.jp"]'); ?>
 
         <div class="ranking-list">
             <?php
