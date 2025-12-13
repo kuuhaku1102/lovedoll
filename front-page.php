@@ -311,33 +311,211 @@ get_header();
         </div>
     </section>
 
-    <!-- FAQ -->
+    <!-- Why Choose Us -->
+    <section class="section-padding container">
+        <div class="section-header text-center mb-5">
+            <span class="badge-cute">Why Choose Us</span>
+            <h2 class="section-title">💎 当サイトが選ばれる理由</h2>
+            <p>安心・安全なラブドール選びをサポートします</p>
+        </div>
+        
+        <div class="grid-3">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">徹底した比較調査</h3>
+                <p class="feature-description">価格だけでなく、品質・保証・アフターサポートまで徹底的に比較。信頼できる情報のみを掲載しています。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3 class="feature-title">国内正規品のみ</h3>
+                <p class="feature-description">国内正規代理店の商品のみを紹介。保証・返品対応がしっかりしているショップだけを厳選しています。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚚</div>
+                <h3 class="feature-title">匿名配送対応</h3>
+                <p class="feature-description">プライバシーを重視し、匿名配送・無地梱包に対応したショップのみをご紹介。安心してご購入いただけます。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3 class="feature-title">最安値保証</h3>
+                <p class="feature-description">複数のショップを常時監視し、最安値情報を更新。お得なキャンペーン情報もいち早くお届けします。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">リアルな口コミ</h3>
+                <p class="feature-description">実際の購入者のレビューや評価を集計。リアルな使用感や満足度を知ることができます。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎓</div>
+                <h3 class="feature-title">初心者サポート</h3>
+                <p class="feature-description">初めての方でも安心して選べるよう、選び方ガイドやメンテナンス方法まで丁寧に解説しています。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customer Reviews -->
     <section class="section-padding bg-cute-pattern">
         <div class="container">
-            <h2 class="section-title text-center mb-5">❓ よくある質問（FAQ）</h2>
-            <div class="faq-list max-w-800 mx-auto">
-                <div class="faq-item">
-                    <h3 class="faq-q">Q. 匿名配送で家族にバレませんか？</h3>
-                    <p class="faq-a">A. 大手販売店はすべて <strong>無地ダンボール</strong> で配送されます。</p>
+            <div class="section-header text-center mb-5">
+                <span class="badge-cute">Reviews</span>
+                <h2 class="section-title">💬 お客様の声</h2>
+                <p>実際にご利用いただいた方々からの声をご紹介</p>
+            </div>
+            
+            <div class="grid-3">
+                <div class="review-card">
+                    <div class="review-rating">★★★★★</div>
+                    <p class="review-text">「初めてのラブドール購入でしたが、このサイトのランキングを参考にして大正解でした。匿名配送で安心して受け取れました。」</p>
+                    <div class="review-author">
+                        <span class="review-name">T.K様</span>
+                        <span class="review-age">30代男性</span>
+                    </div>
                 </div>
-                <div class="faq-item">
-                    <h3 class="faq-q">Q. 重さはどれくらいですか？</h3>
-                    <p class="faq-a">モデルによって8kg〜40kgまで。初心者は <strong>25kg以下</strong> がおすすめ。</p>
+                <div class="review-card">
+                    <div class="review-rating">★★★★★</div>
+                    <p class="review-text">「価格比較が分かりやすく、最安値で購入できました。選び方ガイドも参考になり、自分に合ったモデルを見つけられました。」</p>
+                    <div class="review-author">
+                        <span class="review-name">M.S様</span>
+                        <span class="review-age">40代男性</span>
+                    </div>
                 </div>
-                <div class="faq-item">
-                    <h3 class="faq-q">Q. 海外通販と国内通販どっちが安全？</h3>
-                    <p class="faq-a">国内通販のほうが、不良品対応・保証・配送リスクの低さの面で圧倒的に安全です。</p>
+                <div class="review-card">
+                    <div class="review-rating">★★★★☆</div>
+                    <p class="review-text">「国内正規品のみを扱っているので安心感があります。保証もしっかりしていて、アフターサポートも充実していました。」</p>
+                    <div class="review-author">
+                        <span class="review-name">H.Y様</span>
+                        <span class="review-age">20代男性</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section-padding container">
+        <div class="section-header text-center mb-5">
+            <span class="badge-cute">FAQ</span>
+            <h2 class="section-title">❓ よくある質問</h2>
+            <p>ラブドール購入に関する疑問にお答えします</p>
+        </div>
+        
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>匿名配送で家族にバレませんか？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p>大手販売店はすべて<strong>無地ダンボール</strong>で配送されます。商品名も「雑貨」「インテリア」などと記載され、中身が分からないよう配慮されています。また、営業所留めや時間指定も可能なショップが多いため、プライバシーは十分に守られます。</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>重さはどれくらいですか？持ち運びは大変？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p>モデルによって8kg〜40kgまで幅があります。初心者の方には<strong>25kg以下</strong>のモデルがおすすめです。軽量モデルは扱いやすく、メンテナンスや保管も楽になります。最近では15kg前後の高品質モデルも増えています。</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>海外通販と国内通販、どっちが安全？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p>国内通販のほうが、<strong>不良品対応・保証・配送リスクの低さ</strong>の面で圧倒的に安全です。海外通販は価格が安い場合もありますが、返品や修理が困難で、税関トラブルのリスクもあります。当サイトでは国内正規代理店のみをご紹介しています。</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>メンテナンスは難しいですか？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p>基本的なメンテナンスは<strong>使用後の洗浄とパウダーの塗布</strong>だけです。TPE素材は特に簡単で、シリコン素材も専用のクリーナーを使えば問題ありません。各ショップでメンテナンスキットも販売されており、初心者でも安心して管理できます。</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>保証期間はどれくらいですか？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p>国内正規店では<strong>6ヶ月〜1年の保証</strong>が一般的です。初期不良や製造上の欠陥については無償で修理・交換対応してもらえます。保証内容はショップによって異なるため、購入前に必ず確認しましょう。</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span class="faq-icon">Q</span>
+                    <h3>TPEとシリコン、どちらがおすすめ？</h3>
+                </div>
+                <div class="faq-answer">
+                    <span class="faq-icon">A</span>
+                    <p><strong>TPE</strong>は柔らかくリアルな触感で価格も手頃ですが、耐久性はやや劣ります。<strong>シリコン</strong>は耐久性・質感が高く、メンテナンスも楽ですが、価格は高めです。初心者にはコスパの良いTPEがおすすめですが、長期使用を考えるならシリコンも検討する価値があります。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Purchase Flow -->
+    <section class="section-padding bg-pink-light">
+        <div class="container">
+            <div class="section-header text-center mb-5">
+                <span class="badge-cute">How to Buy</span>
+                <h2 class="section-title">📦 購入までの流れ</h2>
+                <p>初めての方でも安心してご購入いただけます</p>
+            </div>
+            
+            <div class="purchase-flow">
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <h3 class="flow-title">ランキングから選ぶ</h3>
+                    <p class="flow-description">人気ランキングや選び方ガイドを参考に、自分に合ったモデルを選びます。</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <h3 class="flow-title">公式サイトで注文</h3>
+                    <p class="flow-description">気に入ったモデルが見つかったら、公式サイトで注文。匿名配送を選択できます。</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <h3 class="flow-title">安心の配送</h3>
+                    <p class="flow-description">無地ダンボールで自宅に配送。営業所留めも可能です。</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <h3 class="flow-title">開封・使用開始</h3>
+                    <p class="flow-description">付属のマニュアルに従って開封。メンテナンスキットも同梱されています。</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Final CTA -->
-    <section class="cta-section text-center py-5 bg-pink-gradient text-white cute-cta">
+    <section class="cta-section">
         <div class="container">
-            <h2 class="mb-3">迷ったら人気ランキングから選ぶのが最短ルートです</h2>
-            <p class="mb-4">口コミ評価・満足度から<br>“売れている＝失敗しにくい” モデルだけを厳選。</p>
-            <a href="#ranking" class="btn btn-light btn-lg rounded-pill text-pink fw-bold">🏆 人気ランキングを見る</a>
+            <div class="cta-content">
+                <h2 class="cta-title">迷ったら人気ランキングから選ぶのが最短ルートです</h2>
+                <p class="cta-description">口コミ評価・満足度から「売れている＝失敗しにくい」モデルだけを厳選。<br>初心者の方でも安心して選べるよう、詳しい解説付きでご紹介しています。</p>
+                <div class="cta-buttons">
+                    <a href="#ranking" class="btn btn-primary btn-lg">🏆 人気ランキングを見る</a>
+                    <a href="#guide" class="btn btn-secondary btn-lg">🔰 選び方ガイドを見る</a>
+                </div>
+            </div>
         </div>
     </section>
 

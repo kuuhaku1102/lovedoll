@@ -6,8 +6,11 @@
 get_header();
 ?>
 
-<main id="primary" class="site-main container section-padding">
+<main id="primary" class="site-main">
 
+    <?php lovedoll_breadcrumb(); ?>
+
+    <div class="container section-padding">
     <header class="page-header mb-5 text-center">
         <?php
         the_archive_title( '<h1 class="page-title section-title">', '</h1>' );
@@ -76,6 +79,7 @@ get_header();
             <p>記事が見つかりませんでした。</p>
         </div>
     <?php endif; ?>
+    </div><!-- .container -->
 
 </main><!-- #main -->
 

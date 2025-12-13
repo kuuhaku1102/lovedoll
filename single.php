@@ -6,8 +6,11 @@
 get_header();
 ?>
 
-<main id="primary" class="site-main container section-padding">
+<main id="primary" class="site-main">
 
+    <?php lovedoll_breadcrumb(); ?>
+
+    <div class="container section-padding">
     <?php
     while ( have_posts() ) :
         the_post();
@@ -52,9 +55,21 @@ get_header();
             </div>
 
             <footer class="entry-footer mt-5">
+                <?php
+                $tags = get_the_tags();
+                if ( $tags ) :
+                ?>
                 <div class="post-tags">
-                    <?php the_tags( '<span class="tags-label">Tags:</span> ', ', ', '' ); ?>
+                    <span class="tags-label">Tags</span>
+                    <div class="tag-links">
+                        <?php
+                        foreach ( $tags as $tag ) {
+                            echo '<a href="' . get_tag_link( $tag->term_id ) . '">' . esc_html( $tag->name ) . '</a>';
+                        }
+                        ?>
+                    </div>
                 </div>
+                <?php endif; ?>
 
                 <div class="post-navigation mt-5">
                     <div class="nav-links d-flex justify-content-between">
@@ -69,6 +84,7 @@ get_header();
         <?php
     endwhile; // End of the loop.
     ?>
+    </div><!-- .container -->
 
 </main><!-- #main -->
 

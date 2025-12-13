@@ -429,3 +429,140 @@ function lovedoll_disable_comments_admin_bar() {
     }
 }
 add_action('init', 'lovedoll_disable_comments_admin_bar');
+
+/**
+ * Add Structured Data (Schema.org) for SEO
+ */
+function lovedoll_add_structured_data() {
+    if (is_singular('post')) {
+        global $post;
+        
+        $schema = array(
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => get_the_title(),
+            'description' => has_excerpt() ? get_the_excerpt() : wp_trim_words(get_the_content(), 30),
+            'author' => array(
+                '@type' => 'Organization',
+                'name' => get_bloginfo('name')
+            ),
+            'publisher' => array(
+                '@type' => 'Organization',
+                'name' => get_bloginfo('name'),
+                'logo' => array(
+                    '@type' => 'ImageObject',
+                    'url' => get_template_directory_uri() . '/images/logo.png'
+                )
+            ),
+            'datePublished' => get_the_date('c'),
+            'dateModified' => get_the_modified_date('c'),
+            'mainEntityOfPage' => array(
+                '@type' => 'WebPage',
+                '@id' => get_permalink()
+            )
+        );
+        
+        if (has_post_thumbnail()) {
+            $schema['image'] = get_the_post_thumbnail_url(get_the_ID(), 'full');
+        }
+        
+        echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+    }
+    
+    if (is_home() || is_front_page()) {
+        $schema = array(
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => get_bloginfo('name'),
+            'description' => get_bloginfo('description'),
+            'url' => home_url('/'),
+            'potentialAction' => array(
+                '@type' => 'SearchAction',
+                'target' => home_url('/?s={search_term_string}'),
+                'query-input' => 'required name=search_term_string'
+            )
+        );
+        
+        echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+    }
+    
+    // BreadcrumbList Schema
+    if (!is_front_page()) {
+        $breadcrumb_schema = array(
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => array()
+        );
+        
+        $position = 1;
+        
+        // Home
+        $breadcrumb_schema['itemListElement'][] = array(
+            '@type' => 'ListItem',
+            'position' => $position++,
+            'name' => 'ホーム',
+            'item' => home_url('/')
+        );
+        
+        if (is_singular()) {
+            $categories = get_the_category();
+            if ($categories) {
+                $breadcrumb_schema['itemListElement'][] = array(
+                    '@type' => 'ListItem',
+                    'position' => $position++,
+                    'name' => $categories[0]->name,
+                    'item' => get_category_link($categories[0]->term_id)
+                );
+            }
+            
+            $breadcrumb_schema['itemListElement'][] = array(
+                '@type' => 'ListItem',
+                'position' => $position++,
+                'name' => get_the_title(),
+                'item' => get_permalink()
+            );
+        } elseif (is_category()) {
+            $breadcrumb_schema['itemListElement'][] = array(
+                '@type' => 'ListItem',
+                'position' => $position++,
+                'name' => single_cat_title('', false),
+                'item' => get_category_link(get_queried_object_id())
+            );
+        }
+        
+        echo '<script type="application/ld+json">' . json_encode($breadcrumb_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+    }
+}
+add_action('wp_head', 'lovedoll_add_structured_data');
+
+/**
+ * Add Breadcrumb Navigation
+ */
+function lovedoll_breadcrumb() {
+    if (is_front_page()) {
+        return;
+    }
+    
+    echo '<nav class="breadcrumb-nav" aria-label="パンくずリスト">';
+    echo '<ol class="breadcrumb">';
+    echo '<li class="breadcrumb-item"><a href="' . home_url('/') . '">ホーム</a></li>';
+    
+    if (is_singular()) {
+        $categories = get_the_category();
+        if ($categories) {
+            echo '<li class="breadcrumb-item"><a href="' . get_category_link($categories[0]->term_id) . '">' . $categories[0]->name . '</a></li>';
+        }
+        echo '<li class="breadcrumb-item active" aria-current="page">' . get_the_title() . '</li>';
+    } elseif (is_category()) {
+        echo '<li class="breadcrumb-item active" aria-current="page">' . single_cat_title('', false) . '</li>';
+    } elseif (is_tag()) {
+        echo '<li class="breadcrumb-item active" aria-current="page">' . single_tag_title('', false) . '</li>';
+    } elseif (is_archive()) {
+        echo '<li class="breadcrumb-item active" aria-current="page">' . post_type_archive_title('', false) . '</li>';
+    } elseif (is_search()) {
+        echo '<li class="breadcrumb-item active" aria-current="page">検索結果</li>';
+    }
+    
+    echo '</ol>';
+    echo '</nav>';
+}
