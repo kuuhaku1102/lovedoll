@@ -8,42 +8,52 @@ get_header();
 
 <main id="primary" class="site-main container section-padding">
 
-    <header class="page-header mb-4">
+    <header class="page-header mb-5 text-center">
         <?php
-        the_archive_title( '<h1 class="page-title">', '</h1>' );
+        the_archive_title( '<h1 class="page-title section-title">', '</h1>' );
         the_archive_description( '<div class="archive-description">', '</div>' );
         ?>
     </header><!-- .page-header -->
 
     <?php if ( have_posts() ) : ?>
-        <div class="blog-grid">
+        <div class="blog-list-grid">
             <?php
             while ( have_posts() ) :
                 the_post();
                 ?>
-                <article class="blog-card">
-                    <?php if (has_post_thumbnail()) : ?>
-                        <a href="<?php the_permalink(); ?>" class="blog-thumbnail">
-                            <?php the_post_thumbnail('medium'); ?>
-                        </a>
-                    <?php endif; ?>
-                    <div class="blog-content">
-                        <div class="blog-meta">
-                            <span class="blog-date"><?php echo get_the_date('Y.m.d'); ?></span>
+                <article class="blog-list-card">
+                    <div class="blog-list-content">
+                        <div class="blog-list-meta">
+                            <span class="blog-list-date"><?php echo get_the_date('Y.m.d'); ?></span>
                             <?php
                             $categories = get_the_category();
                             if (!empty($categories)) {
-                                echo '<span class="blog-category">' . esc_html($categories[0]->name) . '</span>';
+                                echo '<span class="blog-list-category">' . esc_html($categories[0]->name) . '</span>';
                             }
                             ?>
                         </div>
-                        <h3 class="blog-title">
+                        <h2 class="blog-list-title">
                             <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                        </h3>
-                        <div class="blog-excerpt">
-                            <?php echo wp_trim_words(get_the_excerpt(), 30, '...'); ?>
+                        </h2>
+                        <div class="blog-list-excerpt">
+                            <?php echo wp_trim_words(get_the_excerpt(), 50, '...'); ?>
                         </div>
-                        <a href="<?php the_permalink(); ?>" class="blog-read-more">続きを読む →</a>
+                        <div class="blog-list-footer">
+                            <a href="<?php the_permalink(); ?>" class="blog-list-read-more">続きを読む →</a>
+                            <?php
+                            $tags = get_the_tags();
+                            if ($tags) {
+                                echo '<div class="blog-list-tags">';
+                                $tag_count = 0;
+                                foreach ($tags as $tag) {
+                                    if ($tag_count >= 3) break;
+                                    echo '<span class="tag-item">#' . esc_html($tag->name) . '</span>';
+                                    $tag_count++;
+                                }
+                                echo '</div>';
+                            }
+                            ?>
+                        </div>
                     </div>
                 </article>
                 <?php
@@ -51,12 +61,20 @@ get_header();
             ?>
         </div>
         
-        <div class="pagination">
-            <?php the_posts_pagination(); ?>
+        <div class="pagination mt-5">
+            <?php 
+            the_posts_pagination(array(
+                'mid_size'  => 2,
+                'prev_text' => '&laquo; 前へ',
+                'next_text' => '次へ &raquo;',
+            )); 
+            ?>
         </div>
 
     <?php else : ?>
-        <p>No posts found.</p>
+        <div class="no-results text-center">
+            <p>記事が見つかりませんでした。</p>
+        </div>
     <?php endif; ?>
 
 </main><!-- #main -->
