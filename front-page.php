@@ -299,7 +299,7 @@ get_header();
         </div>
         
         <div class="text-center mt-5">
-            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="btn btn-outline-pink btn-lg">すべての記事を見る →</a>
+            <a href="<?php echo esc_url(home_url('/blog/')); ?>" class="btn btn-outline-pink btn-lg">すべての記事を見る →</a>
         </div>
     </section>
 

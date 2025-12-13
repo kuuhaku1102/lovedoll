@@ -296,10 +296,7 @@ require_once get_template_directory() . '/includes/seo-blog-api.php';
 function lovedoll_add_column_menu_item($items, $args) {
     if ($args->theme_location == 'primary') {
         // Get blog page URL
-        $blog_url = get_permalink(get_option('page_for_posts'));
-        if (!$blog_url) {
-            $blog_url = home_url('/blog/');
-        }
+        $blog_url = home_url('/blog/');
         
         // Add Column menu item
         $column_item = '<li class="menu-item menu-item-column"><a href="' . esc_url($blog_url) . '">📝 コラム</a></li>';
@@ -334,3 +331,24 @@ function lovedoll_create_blog_page() {
     }
 }
 add_action('after_switch_theme', 'lovedoll_create_blog_page');
+
+/**
+ * Flush Rewrite Rules on Theme Activation
+ */
+function lovedoll_flush_rewrite_rules() {
+    flush_rewrite_rules();
+}
+add_action('after_switch_theme', 'lovedoll_flush_rewrite_rules');
+
+/**
+ * Ensure Post Permalinks Work Correctly
+ */
+function lovedoll_fix_post_permalinks() {
+    // Check if we need to flush rewrite rules
+    $flush_needed = get_option('lovedoll_flush_rewrite_rules');
+    if ($flush_needed !== 'done') {
+        flush_rewrite_rules(true);
+        update_option('lovedoll_flush_rewrite_rules', 'done');
+    }
+}
+add_action('init', 'lovedoll_fix_post_permalinks', 999);
