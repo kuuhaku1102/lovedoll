@@ -1,6 +1,3 @@
-# Keyword state file (contains runtime data)
-keyword_state.json
-
 # Ranking cache file
 ranking_cache.json
 
