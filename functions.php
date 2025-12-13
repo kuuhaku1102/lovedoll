@@ -143,6 +143,7 @@ function lovedoll_ranking_meta_box_callback( $post ) {
     $rating = get_post_meta( $post->ID, '_ranking_rating', true );
     $affiliate_link = get_post_meta( $post->ID, '_ranking_affiliate_link', true );
     $rank_order = get_post_meta( $post->ID, '_ranking_order', true );
+    $description = get_post_meta( $post->ID, '_ranking_description', true );
     ?>
     <table class="form-table">
         <tr>
@@ -169,8 +170,15 @@ function lovedoll_ranking_meta_box_callback( $post ) {
         <tr>
             <th><label for="ranking_affiliate_link"><?php _e( 'Affiliate Link', 'lovedoll-premium' ); ?></label></th>
             <td>
-                <input type="url" id="ranking_affiliate_link" name="ranking_affiliate_link" value="<?php echo esc_url( $affiliate_link ); ?>" class="large-text" placeholder="https://example.com" />
+                <input type="url" id="ranking_affiliate_link" name="ranking_affiliate_link" value="<?php echo esc_url( $affiliate_link ); ?>" class="regular-text" />
                 <p class="description"><?php _e( 'Enter the affiliate link URL', 'lovedoll-premium' ); ?></p>
+            </td>
+        </tr>
+        <tr>
+            <th><label for="ranking_description"><?php _e( 'Description', 'lovedoll-premium' ); ?></label></th>
+            <td>
+                <textarea id="ranking_description" name="ranking_description" rows="5" class="large-text"><?php echo esc_textarea( $description ); ?></textarea>
+                <p class="description"><?php _e( 'Enter a brief description or introduction for this ranking item', 'lovedoll-premium' ); ?></p>
             </td>
         </tr>
     </table>
@@ -205,6 +213,10 @@ function lovedoll_save_ranking_meta_box( $post_id ) {
     if ( isset( $_POST['ranking_order'] ) ) {
         update_post_meta( $post_id, '_ranking_order', intval( $_POST['ranking_order'] ) );
     }
+    
+    if ( isset( $_POST['ranking_description'] ) ) {
+        update_post_meta( $post_id, '_ranking_description', wp_kses_post( $_POST['ranking_description'] ) );
+    }
 }
 add_action( 'save_post', 'lovedoll_save_ranking_meta_box' );
 
@@ -238,6 +250,7 @@ function lovedoll_website_ranking_shortcode( $atts ) {
             $rating = get_post_meta( get_the_ID(), '_ranking_rating', true );
             $affiliate_link = get_post_meta( get_the_ID(), '_ranking_affiliate_link', true );
             $rank_order = get_post_meta( get_the_ID(), '_ranking_order', true );
+            $description = get_post_meta( get_the_ID(), '_ranking_description', true );
         ?>
         <div class="ranking-card">
             <div class="ranking-card-inner">
@@ -264,6 +277,11 @@ function lovedoll_website_ranking_shortcode( $atts ) {
                             }
                             ?>
                             <span class="rating-text">(<?php echo esc_html( $rating ); ?>/5)</span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ( $description ) : ?>
+                        <div class="ranking-description">
+                            <p><?php echo wp_kses_post( $description ); ?></p>
                         </div>
                     <?php endif; ?>
                     <?php if ( $affiliate_link ) : ?>
