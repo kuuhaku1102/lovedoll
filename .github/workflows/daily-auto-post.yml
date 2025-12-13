@@ -1,0 +1,52 @@
+name: Daily Auto Post
+
+on:
+  schedule:
+    # 毎日 JST 10:00 (UTC 01:00) に実行
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  auto-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests openai
+      
+      - name: Create logs directory
+        run: mkdir -p logs
+      
+      - name: Run auto post script
+        env:
+          AI_API: ${{ secrets.AI_API }}
+          WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
+          POST_STATUS: publish
+        run: |
+          python auto_post_daily.py --status publish
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-post-logs
+          path: logs/
+          retention-days: 30
+      
+      - name: Commit keyword state
+        if: success()
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add keyword_state.json || true
+          git diff --staged --quiet || git commit -m "Update keyword state [skip ci]"
+          git push || true
