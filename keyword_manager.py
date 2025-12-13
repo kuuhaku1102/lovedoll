@@ -10,11 +10,13 @@ Features:
     - Persistent state management
     - Automatic reset after all keywords are used
     - Extensible keyword database
+    - Special keyword frequency control (ranking-related keywords)
 """
 
 import json
 import logging
 import os
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -22,8 +24,8 @@ from typing import Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 # Comprehensive keyword database for lovedoll topics
-KEYWORD_DATABASE = [
-    # ランキングページ関連（優先度高）
+# ランキングページ関連キーワード（1-2週間に1回程度）
+RANKING_KEYWORDS = [
     "Sweet Doll おすすめ",
     "Sweet Doll レビュー",
     "Sweet Doll 評判",
@@ -34,7 +36,10 @@ KEYWORD_DATABASE = [
     "YourDoll おすすめ",
     "YourDoll レビュー",
     "YourDoll 評判",
-    
+]
+
+# 通常のSEOキーワード（毎日使用）
+REGULAR_KEYWORDS = [
     # 基本・選び方
     "ラブドール 選び方",
     "ラブドール おすすめ",
@@ -104,6 +109,9 @@ KEYWORD_DATABASE = [
     "ラブドール アフターサービス",
 ]
 
+# ランキングキーワードの使用頻度（日数）
+RANKING_KEYWORD_INTERVAL = 10  # 10日に1回
+
 
 class KeywordManager:
     """Manage keywords for blog auto-posting."""
@@ -116,7 +124,8 @@ class KeywordManager:
             state_file: Path to the state file for tracking used keywords
         """
         self.state_file = Path(state_file)
-        self.keywords = KEYWORD_DATABASE.copy()
+        self.regular_keywords = REGULAR_KEYWORDS.copy()
+        self.ranking_keywords = RANKING_KEYWORDS.copy()
         self.state = self._load_state()
         
     def _load_state(self) -> Dict:
@@ -133,6 +142,9 @@ class KeywordManager:
         # Return default state
         return {
             "used_keywords": [],
+            "used_regular_keywords": [],
+            "used_ranking_keywords": [],
+            "last_ranking_keyword_date": None,
             "current_cycle": 1,
             "last_updated": None,
             "total_posts": 0
@@ -148,6 +160,33 @@ class KeywordManager:
         except Exception as e:
             logger.error(f"Failed to save state file: {e}")
     
+    def _should_use_ranking_keyword(self) -> bool:
+        """
+        Determine if a ranking keyword should be used based on the interval.
+        
+        Returns:
+            True if a ranking keyword should be used, False otherwise
+        """
+        last_date = self.state.get("last_ranking_keyword_date")
+        
+        if not last_date:
+            # Never used a ranking keyword before
+            return True
+        
+        try:
+            last_datetime = datetime.fromisoformat(last_date)
+            days_since_last = (datetime.now() - last_datetime).days
+            
+            if days_since_last >= RANKING_KEYWORD_INTERVAL:
+                logger.info(f"Using ranking keyword (last used {days_since_last} days ago)")
+                return True
+            else:
+                logger.info(f"Skipping ranking keyword (last used {days_since_last} days ago, need {RANKING_KEYWORD_INTERVAL})")
+                return False
+        except Exception as e:
+            logger.warning(f"Failed to parse last ranking keyword date: {e}")
+            return True
+    
     def get_next_keyword(self) -> Optional[str]:
         """
         Get the next available keyword that hasn't been used in the current cycle.
@@ -155,17 +194,39 @@ class KeywordManager:
         Returns:
             The next keyword to use, or None if all keywords have been used
         """
-        used_keywords = set(self.state.get("used_keywords", []))
-        available_keywords = [kw for kw in self.keywords if kw not in used_keywords]
+        # Check if we should use a ranking keyword
+        use_ranking = self._should_use_ranking_keyword()
         
-        if not available_keywords:
-            logger.info("All keywords used in current cycle. Starting new cycle.")
-            self._reset_cycle()
-            available_keywords = self.keywords.copy()
+        if use_ranking:
+            # Get available ranking keywords
+            used_ranking = set(self.state.get("used_ranking_keywords", []))
+            available_ranking = [kw for kw in self.ranking_keywords if kw not in used_ranking]
+            
+            if available_ranking:
+                # Randomly select from available ranking keywords
+                next_keyword = random.choice(available_ranking)
+                logger.info(f"Selected ranking keyword: {next_keyword} ({len(available_ranking)} ranking keywords remaining)")
+                return next_keyword
+            else:
+                # All ranking keywords used, reset
+                logger.info("All ranking keywords used. Resetting ranking keywords.")
+                self.state["used_ranking_keywords"] = []
+                next_keyword = random.choice(self.ranking_keywords)
+                logger.info(f"Selected ranking keyword (after reset): {next_keyword}")
+                return next_keyword
         
-        # Select the first available keyword
-        next_keyword = available_keywords[0]
-        logger.info(f"Selected keyword: {next_keyword} ({len(available_keywords)} remaining)")
+        # Use regular keyword
+        used_regular = set(self.state.get("used_regular_keywords", []))
+        available_regular = [kw for kw in self.regular_keywords if kw not in used_regular]
+        
+        if not available_regular:
+            logger.info("All regular keywords used in current cycle. Starting new cycle.")
+            self._reset_regular_cycle()
+            available_regular = self.regular_keywords.copy()
+        
+        # Randomly select from available regular keywords
+        next_keyword = random.choice(available_regular)
+        logger.info(f"Selected regular keyword: {next_keyword} ({len(available_regular)} regular keywords remaining)")
         
         return next_keyword
     
@@ -176,18 +237,34 @@ class KeywordManager:
         Args:
             keyword: The keyword that was used
         """
+        # Add to general used keywords
         if keyword not in self.state["used_keywords"]:
             self.state["used_keywords"].append(keyword)
             self.state["total_posts"] += 1
-            self._save_state()
-            logger.info(f"Marked keyword as used: {keyword}")
+        
+        # Add to specific category
+        if keyword in self.ranking_keywords:
+            if keyword not in self.state.get("used_ranking_keywords", []):
+                if "used_ranking_keywords" not in self.state:
+                    self.state["used_ranking_keywords"] = []
+                self.state["used_ranking_keywords"].append(keyword)
+                self.state["last_ranking_keyword_date"] = datetime.now().isoformat()
+                logger.info(f"Marked ranking keyword as used: {keyword}")
+        else:
+            if keyword not in self.state.get("used_regular_keywords", []):
+                if "used_regular_keywords" not in self.state:
+                    self.state["used_regular_keywords"] = []
+                self.state["used_regular_keywords"].append(keyword)
+                logger.info(f"Marked regular keyword as used: {keyword}")
+        
+        self._save_state()
     
-    def _reset_cycle(self):
-        """Reset the keyword cycle and start over."""
-        self.state["used_keywords"] = []
+    def _reset_regular_cycle(self):
+        """Reset the regular keyword cycle and start over."""
+        self.state["used_regular_keywords"] = []
         self.state["current_cycle"] += 1
         self._save_state()
-        logger.info(f"Reset keyword cycle. Now on cycle {self.state['current_cycle']}")
+        logger.info(f"Reset regular keyword cycle. Now on cycle {self.state['current_cycle']}")
     
     def get_stats(self) -> Dict:
         """
@@ -196,29 +273,41 @@ class KeywordManager:
         Returns:
             Dictionary containing usage statistics
         """
-        total_keywords = len(self.keywords)
-        used_keywords = len(self.state.get("used_keywords", []))
-        remaining_keywords = total_keywords - used_keywords
+        total_keywords = len(self.regular_keywords) + len(self.ranking_keywords)
+        used_regular = len(self.state.get("used_regular_keywords", []))
+        used_ranking = len(self.state.get("used_ranking_keywords", []))
+        total_used = len(self.state.get("used_keywords", []))
         
         return {
             "total_keywords": total_keywords,
-            "used_keywords": used_keywords,
-            "remaining_keywords": remaining_keywords,
+            "regular_keywords": len(self.regular_keywords),
+            "ranking_keywords": len(self.ranking_keywords),
+            "used_keywords": total_used,
+            "used_regular_keywords": used_regular,
+            "used_ranking_keywords": used_ranking,
+            "remaining_regular_keywords": len(self.regular_keywords) - used_regular,
+            "remaining_ranking_keywords": len(self.ranking_keywords) - used_ranking,
             "current_cycle": self.state.get("current_cycle", 1),
             "total_posts": self.state.get("total_posts", 0),
             "last_updated": self.state.get("last_updated"),
-            "progress_percentage": (used_keywords / total_keywords * 100) if total_keywords > 0 else 0
+            "last_ranking_keyword_date": self.state.get("last_ranking_keyword_date"),
+            "progress_percentage": (total_used / total_keywords * 100) if total_keywords > 0 else 0
         }
     
-    def list_remaining_keywords(self) -> List[str]:
+    def list_remaining_keywords(self) -> Dict[str, List[str]]:
         """
         Get a list of remaining keywords in the current cycle.
         
         Returns:
-            List of unused keywords
+            Dictionary with 'regular' and 'ranking' keyword lists
         """
-        used_keywords = set(self.state.get("used_keywords", []))
-        return [kw for kw in self.keywords if kw not in used_keywords]
+        used_regular = set(self.state.get("used_regular_keywords", []))
+        used_ranking = set(self.state.get("used_ranking_keywords", []))
+        
+        return {
+            "regular": [kw for kw in self.regular_keywords if kw not in used_regular],
+            "ranking": [kw for kw in self.ranking_keywords if kw not in used_ranking]
+        }
     
     def list_used_keywords(self) -> List[str]:
         """
@@ -255,17 +344,27 @@ def main():
         stats = manager.get_stats()
         print("Keyword Statistics:")
         print(f"  Total Keywords: {stats['total_keywords']}")
+        print(f"    Regular Keywords: {stats['regular_keywords']}")
+        print(f"    Ranking Keywords: {stats['ranking_keywords']}")
         print(f"  Used Keywords: {stats['used_keywords']}")
-        print(f"  Remaining Keywords: {stats['remaining_keywords']}")
+        print(f"    Used Regular: {stats['used_regular_keywords']}")
+        print(f"    Used Ranking: {stats['used_ranking_keywords']}")
+        print(f"  Remaining Keywords:")
+        print(f"    Regular: {stats['remaining_regular_keywords']}")
+        print(f"    Ranking: {stats['remaining_ranking_keywords']}")
         print(f"  Current Cycle: {stats['current_cycle']}")
         print(f"  Total Posts: {stats['total_posts']}")
         print(f"  Progress: {stats['progress_percentage']:.1f}%")
         print(f"  Last Updated: {stats['last_updated']}")
+        print(f"  Last Ranking Keyword: {stats['last_ranking_keyword_date']}")
     
     elif args.list:
         remaining = manager.list_remaining_keywords()
-        print(f"Remaining Keywords ({len(remaining)}):")
-        for i, kw in enumerate(remaining, 1):
+        print(f"Remaining Regular Keywords ({len(remaining['regular'])}):")
+        for i, kw in enumerate(remaining['regular'], 1):
+            print(f"  {i}. {kw}")
+        print(f"\nRemaining Ranking Keywords ({len(remaining['ranking'])}):")
+        for i, kw in enumerate(remaining['ranking'], 1):
             print(f"  {i}. {kw}")
     
     elif args.mark_used:
@@ -273,8 +372,8 @@ def main():
         print(f"Marked as used: {args.mark_used}")
     
     elif args.reset:
-        manager._reset_cycle()
-        print("Cycle reset successfully")
+        manager._reset_regular_cycle()
+        print("Regular keyword cycle reset successfully")
     
     else:
         parser.print_help()
