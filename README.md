@@ -6,7 +6,7 @@
 
 `python scrape_happiness_to_wp.py` は `https://happiness-doll.com/products/list` をデフォルト取得元として同じ REST API に送信します（ページネーション上限 10 ページ、遅延 1.5 秒を挟んでロード待ちします）。happiness-doll 専用の HTML 構造（`li.ec-shelfGrid__item` 内の `.ec-shelfGrid__item-title`／`.ec-shelfGrid__item-image img`／`.discount-price`→`.price-flash`→`.price02`→`.price` の優先順）にのみ依存し、yourdoll.jp のセレクタは使用しません。
 `python scrape_sweet_to_wp.py` は `https://sweet-doll.com/product-category/sedoll/` をデフォルト取得元として、`.product-grid-item` / `.product-image-link img` / `.wd-entities-title a` / `.price .woocommerce-Price-amount` に完全準拠した sweet-doll 専用パーサで抽出し、同 REST API に送信します（最大 10 ページのページネーション対応、重複 URL スキップ付き）。
-`python scrape_kuma_to_wp.py` は `https://www.kuma-doll.com/Products/list-r1.html` をデフォルト取得元として、`.product-item` / `.image img` / `.title` / `.price span` に完全準拠した kuma-doll 専用パーサで抽出し、lazyload や `<noscript>` 内の画像・他の `<img>` もフォールバックで拾って同 REST API に送信します（最大 10 ページ、重複 URL スキップ・100 万円以上スキップ付き）。
+`python scrape_kuma_to_wp.py` は `https://www.kuma-doll.com/Products/list-r1.html` をデフォルト取得元として、`.product-item` / `.image img` / `.title` / `.price span` に完全準拠した kuma-doll 専用パーサで抽出し、一覧ページ→商品詳細ページ→実体画像 URL→同一セッションで画像取得、の順で画像バイト列を取得して base64 で WordPress REST API に送信します（最大 10 ページ、重複 URL スキップ・100 万円以上スキップ付き）。
 
 ### 必要ライブラリのインストール
 ```bash
@@ -39,7 +39,7 @@ python scrape_sweet_to_wp.py \
   --limit 20 \
   --max-pages 10
 
-# kuma-doll.com 向け（デフォルトURLは https://www.kuma-doll.com/Products/list-r1.html ）
+# kuma-doll.com 向け（デフォルトURLは https://www.kuma-doll.com/Products/list-r1.html / 詳細ページ経由で画像取得）
 python scrape_kuma_to_wp.py \
   --wp-base "https://freya-era.com" \
   --limit 20 \
@@ -71,5 +71,5 @@ python scrape_kuma_to_wp.py \
 ### WordPress 側の REST API / 画像ホットリンク対策
 - `includes/lovedoll-products-api.php` で `/wp-json/lovedoll/v1/add-item` と `/wp-json/lovedoll/v1/list` を登録しています（`functions.php` 経由で読み込み）。
 - 送信 JSON は `{ "title": "...", "price": 123456, "image_url": "https://...", "product_url": "https://..." }` 形式で、すべてのフィールドが必須です。
-- `kuma-doll.com` ドメインの画像は WordPress サーバー側で `download_url()` → `media_handle_sideload()` でダウンロード・メディア登録し、取得したメディア URL を使ってホットリンク（ロゴ置換）を回避します。
+- `kuma-doll.com` ドメインの画像は Python 側で商品詳細ページを踏んで同一セッションのまま実体画像を取得し、base64 化して REST API へ送信します。WordPress サーバー側では受け取ったバイナリを `media_handle_sideload()` でメディア登録し、取得したメディア URL を使ってホットリンク（ロゴ置換）を回避します。`image_content` が無い/失敗した場合は WordPress 側で `download_url()` 経由のフォールバックを試みます。
 - それ以外のドメイン画像も `media_sideload_image()` でメディア化し、投稿のアイキャッチに設定します。投稿には `product_url`・元画像 URL・最終的なメディア URL（`_final_image_url`）と価格がメタ保存されます。

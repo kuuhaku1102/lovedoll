@@ -118,10 +118,12 @@ function lovedoll_list_items() {
  * REST callback: ingest a product item.
  */
 function lovedoll_add_item( WP_REST_Request $request ) {
-    $title       = sanitize_text_field( $request->get_param( 'title' ) );
-    $raw_price   = $request->get_param( 'price' );
-    $image_src   = esc_url_raw( $request->get_param( 'image_url' ) );
-    $product_url = esc_url_raw( $request->get_param( 'product_url' ) );
+    $title         = sanitize_text_field( $request->get_param( 'title' ) );
+    $raw_price     = $request->get_param( 'price' );
+    $image_src     = esc_url_raw( $request->get_param( 'image_url' ) );
+    $product_url   = esc_url_raw( $request->get_param( 'product_url' ) );
+    $image_content = $request->get_param( 'image_content' );
+    $image_name    = sanitize_file_name( $request->get_param( 'image_name' ) );
 
     $price = lovedoll_normalize_price( $raw_price );
 
@@ -180,17 +182,46 @@ function lovedoll_add_item( WP_REST_Request $request ) {
     $final_image_url = $image_src;
     $thumbnail_id    = null;
 
-    if ( false !== strpos( $image_src, 'kuma-doll.com' ) ) {
-        $saved = lid_fetch_image_with_referer( $image_src, $title );
-        if ( $saved ) {
-            $final_image_url = $saved;
-            $thumbnail_id    = attachment_url_to_postid( $saved );
+    // Prefer direct binary provided by scraper (base64-encoded image_content).
+    if ( $image_content ) {
+        $decoded = base64_decode( $image_content );
+        if ( false !== $decoded ) {
+            $tmp = wp_tempnam( $image_name ? $image_name : 'kuma-image' );
+            if ( $tmp && false !== file_put_contents( $tmp, $decoded ) ) {
+                $filetype = wp_check_filetype( $image_name );
+                $file     = [
+                    'name'     => $image_name ? $image_name : 'kuma-image.webp',
+                    'type'     => $filetype && $filetype['type'] ? $filetype['type'] : 'image/webp',
+                    'tmp_name' => $tmp,
+                    'error'    => 0,
+                    'size'     => filesize( $tmp ),
+                ];
+
+                $attachment_id = media_handle_sideload( $file, $post_id, $title, 'id' );
+                @unlink( $tmp );
+
+                if ( ! is_wp_error( $attachment_id ) ) {
+                    $thumbnail_id    = $attachment_id;
+                    $final_image_url = wp_get_attachment_url( $attachment_id );
+                }
+            }
         }
-    } else {
-        $attachment_id = media_sideload_image( $image_src, $post_id, $title, 'id' );
-        if ( ! is_wp_error( $attachment_id ) ) {
-            $thumbnail_id    = $attachment_id;
-            $final_image_url = wp_get_attachment_url( $attachment_id );
+    }
+
+    // If binary was not supplied or failed, fall back to fetching by URL.
+    if ( ! $thumbnail_id ) {
+        if ( false !== strpos( $image_src, 'kuma-doll.com' ) ) {
+            $saved = lid_fetch_image_with_referer( $image_src, $title );
+            if ( $saved ) {
+                $final_image_url = $saved;
+                $thumbnail_id    = attachment_url_to_postid( $saved );
+            }
+        } else {
+            $attachment_id = media_sideload_image( $image_src, $post_id, $title, 'id' );
+            if ( ! is_wp_error( $attachment_id ) ) {
+                $thumbnail_id    = $attachment_id;
+                $final_image_url = wp_get_attachment_url( $attachment_id );
+            }
         }
     }
 
