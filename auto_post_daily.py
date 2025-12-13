@@ -160,11 +160,6 @@ def main():
             logger.info(f"  Permalink: {result.get('permalink', 'N/A')}")
             logger.info(f"  Status: {result.get('status', 'N/A')}")
             
-            # Mark keyword as used
-            if not args.force_keyword:
-                keyword_manager.mark_keyword_used(keyword)
-                logger.info(f"Marked keyword as used: {keyword}")
-            
             # Send success notification
             send_notification(
                 "Auto-posting Successful",
@@ -173,6 +168,11 @@ def main():
                 f"Keyword: {keyword}\n"
                 f"URL: {result.get('permalink', 'N/A')}"
             )
+        
+        # Mark keyword as used (even in dry run to prevent duplicates)
+        if not args.force_keyword:
+            keyword_manager.mark_keyword_used(keyword)
+            logger.info(f"Marked keyword as used: {keyword}")
         
         logger.info("=" * 80)
         logger.info("Daily Auto-posting Script Completed Successfully")
