@@ -307,6 +307,7 @@ add_shortcode( 'website_ranking', 'lovedoll_website_ranking_shortcode' );
  * Load SEO Blog API
  */
 require_once get_template_directory() . '/includes/seo-blog-api.php';
+require_once get_template_directory() . '/includes/lovedoll-products-api.php';
 
 /**
  * Add Column Menu Item to Primary Menu
