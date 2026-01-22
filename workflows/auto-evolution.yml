@@ -1,0 +1,122 @@
+name: Auto Evolution System
+
+on:
+  schedule:
+    # SEO 自動最適化: 毎週日曜日 午前2時（JST）
+    - cron: '0 17 * * 0'  # UTC: 日曜日 17:00 = JST: 月曜日 02:00
+    
+    # コンテンツ自動リライト: 毎週水曜日 午前3時（JST）
+    - cron: '0 18 * * 3'  # UTC: 水曜日 18:00 = JST: 木曜日 03:00
+    
+    # トレンド自動対応: 毎日 午前11時（JST）
+    - cron: '0 2 * * *'   # UTC: 02:00 = JST: 11:00
+    
+    # TOP ページ自動進化: 毎日 午後6時（JST）
+    - cron: '0 9 * * *'   # UTC: 09:00 = JST: 18:00
+    
+    # 自動コンテンツ提案: 毎週月曜日 午前9時（JST）
+    - cron: '0 0 * * 1'   # UTC: 月曜日 00:00 = JST: 月曜日 09:00
+  
+  workflow_dispatch:
+    inputs:
+      system:
+        description: '実行するシステム'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - seo_optimizer
+          - content_rewriter
+          - trend_responder
+          - homepage_evolver
+          - content_suggester
+
+jobs:
+  auto-evolution:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai requests beautifulsoup4
+      
+      - name: Run SEO Auto Optimizer
+        if: github.event.schedule == '0 17 * * 0' || github.event.inputs.system == 'all' || github.event.inputs.system == 'seo_optimizer'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          echo "🔍 SEO 自動最適化エンジン 実行中..."
+          python seo_auto_optimizer.py
+      
+      - name: Run Content Auto Rewriter
+        if: github.event.schedule == '0 18 * * 3' || github.event.inputs.system == 'all' || github.event.inputs.system == 'content_rewriter'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          echo "✍️ コンテンツ自動リライトシステム 実行中..."
+          python content_auto_rewriter.py
+      
+      - name: Run Trend Auto Responder
+        if: github.event.schedule == '0 2 * * *' || github.event.inputs.system == 'all' || github.event.inputs.system == 'trend_responder'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          echo "🔥 トレンド自動対応システム 実行中..."
+          python trend_auto_responder.py
+      
+      - name: Run Homepage Auto Evolver
+        if: github.event.schedule == '0 9 * * *' || github.event.inputs.system == 'all' || github.event.inputs.system == 'homepage_evolver'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          echo "🏠 TOP ページ自動進化システム 実行中..."
+          python homepage_auto_evolver.py
+      
+      - name: Run Content Auto Suggester
+        if: github.event.schedule == '0 0 * * 1' || github.event.inputs.system == 'all' || github.event.inputs.system == 'content_suggester'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          echo "💡 自動コンテンツ提案システム 実行中..."
+          python content_auto_suggester.py
+      
+      - name: Commit and push changes
+        if: github.event.schedule != '' || github.event.inputs.system != ''
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/ logs/ backups/ front-page.php || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Auto Evolution: $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+      
+      - name: Upload logs as artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: evolution-logs
+          path: logs/
+          retention-days: 30
