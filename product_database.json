@@ -1,0 +1,179 @@
+{
+  "products": [
+    {
+      "id": "lovedoll-beginner-01",
+      "name": "初心者向け軽量モデル",
+      "category": ["lovedoll-selection", "lovedoll-purchase"],
+      "price": "¥98,000〜",
+      "features": [
+        "重量15kg以下で扱いやすい",
+        "TPE素材で柔らかな肌触り",
+        "初めての方でも安心のサイズ感"
+      ],
+      "image_url": "/wp-content/uploads/lovedoll-beginner.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/beginner-model/",
+      "shop_name": "YourDoll",
+      "priority": 1
+    },
+    {
+      "id": "lovedoll-premium-01",
+      "name": "プレミアムシリコンモデル",
+      "category": ["lovedoll-selection", "lovedoll-brand"],
+      "price": "¥380,000〜",
+      "features": [
+        "高品質シリコン素材",
+        "リアルな造形と美しいメイク",
+        "カスタマイズオプション豊富"
+      ],
+      "image_url": "/wp-content/uploads/lovedoll-premium.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/premium-silicone/",
+      "shop_name": "YourDoll",
+      "priority": 2
+    },
+    {
+      "id": "maintenance-kit-01",
+      "name": "メンテナンスキット",
+      "category": ["lovedoll-maintenance"],
+      "price": "¥8,800",
+      "features": [
+        "専用洗浄液・パウダー付き",
+        "長持ちさせるための必需品",
+        "使い方ガイド付き"
+      ],
+      "image_url": "/wp-content/uploads/maintenance-kit.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/maintenance-kit/",
+      "shop_name": "YourDoll",
+      "priority": 1
+    },
+    {
+      "id": "storage-bag-01",
+      "name": "専用保管バッグ",
+      "category": ["lovedoll-storage", "lovedoll-maintenance"],
+      "price": "¥12,000",
+      "features": [
+        "通気性の良い素材",
+        "ホコリや汚れから保護",
+        "持ち運びにも便利"
+      ],
+      "image_url": "/wp-content/uploads/storage-bag.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/storage-bag/",
+      "shop_name": "YourDoll",
+      "priority": 2
+    },
+    {
+      "id": "tpe-model-01",
+      "name": "TPE素材スタンダードモデル",
+      "category": ["lovedoll-material", "lovedoll-selection"],
+      "price": "¥128,000〜",
+      "features": [
+        "柔らかく弾力のあるTPE素材",
+        "コストパフォーマンスに優れる",
+        "豊富なバリエーション"
+      ],
+      "image_url": "/wp-content/uploads/tpe-model.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/tpe-standard/",
+      "shop_name": "YourDoll",
+      "priority": 1
+    },
+    {
+      "id": "custom-head-01",
+      "name": "カスタムヘッドオプション",
+      "category": ["lovedoll-customize"],
+      "price": "¥45,000〜",
+      "features": [
+        "顔のパーツを自由にカスタマイズ",
+        "メイクスタイルも選択可能",
+        "交換用ヘッドとしても使用可"
+      ],
+      "image_url": "/wp-content/uploads/custom-head.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/custom-head/",
+      "shop_name": "YourDoll",
+      "priority": 1
+    },
+    {
+      "id": "brand-comparison-01",
+      "name": "人気ブランドモデル比較セット",
+      "category": ["lovedoll-brand", "lovedoll-purchase"],
+      "price": "¥158,000〜",
+      "features": [
+        "主要3ブランドから選択可能",
+        "品質保証付き",
+        "国内正規品のみ"
+      ],
+      "image_url": "/wp-content/uploads/brand-comparison.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/brand-comparison/",
+      "shop_name": "YourDoll",
+      "priority": 2
+    },
+    {
+      "id": "faq-guide-book",
+      "name": "初心者向けガイドブック",
+      "category": ["lovedoll-faq", "lovedoll-selection"],
+      "price": "無料ダウンロード",
+      "features": [
+        "よくある質問を網羅",
+        "メンテナンス方法を図解",
+        "トラブルシューティング付き"
+      ],
+      "image_url": "/wp-content/uploads/guide-book.jpg",
+      "affiliate_link": "https://yourdoll.jp/guide/",
+      "shop_name": "YourDoll",
+      "priority": 3
+    }
+  ],
+  "default_products": [
+    {
+      "id": "default-01",
+      "name": "おすすめスターターセット",
+      "category": ["default"],
+      "price": "¥118,000",
+      "features": [
+        "初心者に最適なセット内容",
+        "メンテナンスキット付き",
+        "安心の国内正規品"
+      ],
+      "image_url": "/wp-content/uploads/starter-set.jpg",
+      "affiliate_link": "https://yourdoll.jp/product/starter-set/",
+      "shop_name": "YourDoll",
+      "priority": 1
+    }
+  ],
+  "cta_templates": {
+    "lovedoll-selection": {
+      "title": "あなたにぴったりのラブドールを見つけよう",
+      "description": "初心者の方でも安心して選べる、厳選されたモデルをご紹介します。"
+    },
+    "lovedoll-maintenance": {
+      "title": "長く愛用するためのメンテナンスアイテム",
+      "description": "大切なラブドールを美しく保つための必需品をご紹介します。"
+    },
+    "lovedoll-material": {
+      "title": "素材別おすすめモデル",
+      "description": "TPE・シリコンそれぞれの特徴を活かしたモデルをご紹介します。"
+    },
+    "lovedoll-purchase": {
+      "title": "信頼できるショップで安心購入",
+      "description": "国内正規品を取り扱う信頼できるショップをご紹介します。"
+    },
+    "lovedoll-customize": {
+      "title": "あなただけのオリジナルを作ろう",
+      "description": "カスタマイズオプションで理想のラブドールを実現できます。"
+    },
+    "lovedoll-brand": {
+      "title": "人気ブランドのおすすめモデル",
+      "description": "品質と信頼性で選ばれるブランドのモデルをご紹介します。"
+    },
+    "lovedoll-storage": {
+      "title": "適切な保管で長持ちさせよう",
+      "description": "保管・収納に便利なアイテムをご紹介します。"
+    },
+    "lovedoll-faq": {
+      "title": "初心者の方へのおすすめ",
+      "description": "よくある疑問を解消し、安心して始められるアイテムをご紹介します。"
+    },
+    "default": {
+      "title": "おすすめのラブドール・関連商品",
+      "description": "厳選されたラブドールと関連アイテムをご紹介します。"
+    }
+  }
+}

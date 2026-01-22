@@ -43,6 +43,9 @@ function lovedoll_scripts() {
     // Google Fonts
     wp_enqueue_style( 'google-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@400;700&display=swap', array(), null );
 
+    // CTA Section Styles
+    wp_enqueue_style( 'cta-section-styles', get_template_directory_uri() . '/cta-section-styles.css', array(), '1.0.0' );
+
     // Navigation JS
     wp_enqueue_script( 'lovedoll-navigation', get_template_directory_uri() . '/js/navigation.js', array(), '1.0.0', true );
 }

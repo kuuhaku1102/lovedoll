@@ -14,6 +14,7 @@ import base64
 import re
 from datetime import datetime
 from internal_link_manager import InternalLinkManager
+from cta_generator import CTAGenerator
 
 
 class WordPressPublisher:
@@ -30,6 +31,9 @@ class WordPressPublisher:
         
         # 内部リンクマネージャー
         self.link_manager = InternalLinkManager()
+        
+        # CTAジェネレーター
+        self.cta_generator = CTAGenerator()
         
         # カテゴリマッピング
         self.category_mapping = {
@@ -196,6 +200,10 @@ class WordPressPublisher:
         
         # カテゴリページへのリンクを追加
         category_link = f'<div class="internal-link-box"><p>📚 <a href="{self.site_url}/category/{category_slug}/">「{category_name}」の記事一覧を見る</a></p></div>'
+        
+        # CTAセクションを追加
+        print("\n[CTAセクション自動生成]")
+        content = self.cta_generator.add_cta_to_content(content, article_data['category'], max_products=3)
         
         # コンテンツの最後に追加
         content_with_links = content + '\n\n' + category_link
